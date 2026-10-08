@@ -1,16 +1,68 @@
 <!DOCTYPE html>
 
-<html>
+<html lang = "en">
   <head>
-    <meta charset=UTF-8>        <!-- para caracteres acentuados   -->
-    <title>Alquerque</title>  
+    <meta charset=UTF-8>  <!--para caracteres acentuados-->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Alquerque Web</title>
+    <link rel="stylesheet" href="estilo.css">  
   </head>
 
 
+<body>
+    <!--Logotipo-->
+    <header id="logotipo">
+        <h1>Alquerque Web</h1>
+    </header>
+
+    <!-- Identificación-->
+    <section id="identificacion">
+        <!-- Aquí irá el formulario de login en el futuro -->
+         <p> User: Guest</p>
+    </section>
+
+    <!-- Configuración-->
+     <section id="configuracion">
+        <h2>Configuration</h2>
+        <!-- Selectores para el tamaño del tablero, IA, etc -->
+     </section>
+
+     <!--Comandos-->
+    <nav id="comandos">
+        <button> Start match</button>
+        <button> See instructions</button>
+        <button> Classification</button>
+        <button> Propose a draw</button>
+        <button> Give up</button>
+    </nav>
+
+    <!-- Mensajes (Turnos, errores, victorias)-->
+    <section id="mensajes">
+        <h2>Messages</h2>
+        <p>Welcome to Alquerque Web! Please start a match to begin playing.</p>
+    </section>
+        <!-- Aquí se mostrarán los mensajes del juego -->
+
+    <!-- Tablero de juego-->
+    <main id="tablero">
+        <h2>Game Board</h2>
+        <!-- se generara aqui el tablero con JavaScript-->
+    </main>
+
+    <!-- Instrucciones (panel superpuesto oculto por defecto)-->
+    <dialog id="instrucciones">
+        <h2>Game Rules</h2>
+        <p>Here you will find the instructions for playing Alquerque.</p>
+        <button id="close-instructions">Close</button>
+    </dialog>
+
+    <!-- Clasificiones (Panel superpuesto oculto por defecto)-->
+     <dialog id="clasificaciones">
+        <h2>Rankings</h2>
+        <p>Here you will find the player rankings.</p>
+        <button id="close-rankings">Close</button>
+    </dialog>
 
 
-
-
-
-  
+</body>
 </html>
