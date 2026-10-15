@@ -36,11 +36,11 @@ Since this project uses vanilla web technologies and runs entirely on the client
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/yourusername/alquerque-web.git
+   git clone https://github.com/yourusername/ProyectoTW.git
    ```
 2. **Navigate to the directory:**
    ```bash
-   cd alquerque-web
+   cd ProyectoTW
    ```
 3. **Run the game:**
    Simply open the `index.html` file in your preferred modern web browser.
