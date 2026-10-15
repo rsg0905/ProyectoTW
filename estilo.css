@@ -130,3 +130,45 @@ hr {
   color: #ffffff;
 }
 
+#tablero-grid {
+  display: grid;
+  /* Ajustamos las columnas para que cuadren con la foto */
+  grid-template-columns: repeat(5, 50px);
+  grid-template-rows: repeat(5, 50px);
+  justify-content: center;
+  margin-top: 20px;
+
+  /* Ponemos la foto de lineas como fondo */
+  background-image: url('fondo.svg');
+  background-position: center;
+  background-repeat: no-repeat;
+  /* Forzamos el tamaño para que las rayas encajen en el centro de las casillas */
+  background-size: 200px 200px;
+}
+
+.casilla {
+  width: 50px;
+  height: 50px;
+  /* Quitamos el color de fondo para que se vean las rayas de la imagen */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* Fichas */
+.ficha-roja {
+  width: 35px;
+  height: 35px;
+  background-color: #ff6666; /* Rojo */
+  border-radius: 50%;
+  box-shadow: inset -3px -3px 5px rgba(0,0,0,0.2); /* Efecto 3D (lo podemos quitar si eso) */
+}
+
+.ficha-azul {
+  width: 35px;
+  height: 35px;
+  background-color: #6666ff; /* Azul */
+  border-radius: 50%;
+  box-shadow: inset -3px -3px 5px rgba(0,0,0,0.2);
+}
