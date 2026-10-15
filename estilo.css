@@ -130,26 +130,39 @@ hr {
   color: #ffffff;
 }
 
-#tablero-grid {
-  display: grid;
-  /* Ajustamos las columnas para que cuadren con la foto */
-  grid-template-columns: repeat(5, 50px);
-  grid-template-rows: repeat(5, 50px);
-  justify-content: center;
-  margin-top: 20px;
+/* =========================================
+   ESTILOS DEL TABLERO Y FICHAS (AÑADIR AL FINAL)
+   ========================================= */
+/* =========================================
+   ESTILOS DEL TABLERO Y FICHAS (INTERSECCIONES)
+   ========================================= */
 
-  /* Ponemos la foto de lineas como fondo */
-  background-image: url('fondo.svg');
-  background-position: center;
-  background-repeat: no-repeat;
-  /* Forzamos el tamaño para que las rayas encajen en el centro de las casillas */
-  background-size: 200px 200px;
+#tablero {
+  position: relative;
+  display: inline-block; /* Ajusta el contenedor al tamaño de la cuadrícula */
+  margin-top: 20px;
 }
 
-.casilla {
-  width: 50px;
-  height: 50px;
-  /* Quitamos el color de fondo para que se vean las rayas de la imagen */
+#tablero-grid {
+  display: grid;
+  position: relative;
+  z-index: 2; /* Mantiene las casillas y fichas por encima de las líneas */
+}
+
+/* SVG generado dinámicamente para las líneas */
+#tablero-lineas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1; /* Coloca las líneas por debajo de las fichas */
+  pointer-events: none; /* Evita que el SVG interfiera con los clics */
+}
+
+.box {
+  width: 60px;
+  height: 60px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -157,18 +170,12 @@ hr {
 }
 
 /* Fichas */
-.ficha-roja {
-  width: 35px;
-  height: 35px;
-  background-color: #ff6666; /* Rojo */
+.red-piece, .blue-piece {
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  box-shadow: inset -3px -3px 5px rgba(0,0,0,0.2); /* Efecto 3D (lo podemos quitar si eso) */
+  box-shadow: inset -3px -3px 5px rgba(0,0,0,0.3), 2px 2px 4px rgba(0,0,0,0.4);
 }
 
-.ficha-azul {
-  width: 35px;
-  height: 35px;
-  background-color: #6666ff; /* Azul */
-  border-radius: 50%;
-  box-shadow: inset -3px -3px 5px rgba(0,0,0,0.2);
-}
+.red-piece { background-color: #ff4d4d; }
+.blue-piece { background-color: #4d4dff; }
