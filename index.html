@@ -1,8 +1,8 @@
-<!DOCTYPE html>
+	<!DOCTYPE html>
 
 <html lang = "en">
   <head>
-    <meta charset=UTF-8>  <!--para caracteres acentuados-->
+    <meta charset="UTF-8">  <!--para caracteres acentuados-->
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Alquerque Web</title>
     <link rel="stylesheet" href="estilo.css">  
@@ -11,29 +11,55 @@
 
 <body>
     <!--Logotipo-->
-    <header id="logotipo">
+    <header id="logotype">
         <h1>Alquerque Web</h1>
     </header>
 
     <!-- Identificación-->
-    <section id="identificacion">
+    <section id="identification">
         <!-- Aquí irá el formulario de login en el futuro -->
          <p> User: Guest</p>
     </section>
 
-    <!-- Configuración-->
-     <section id="configuracion">
+    <!-- Configuración -->
+    <section id="configuration">
         <h2>Configuration</h2>
-        <!-- Selectores para el tamaño del tablero, IA, etc -->
-     </section>
+        
+        <label for="select-size">Board Size:</label>
+        <select id="select-size">
+            <option value="3">3x3</option>
+            <option value="4">4x4</option>
+            <option value="5" selected>5x5</option>
+        </select>
 
-     <!--Comandos-->
-    <nav id="comandos">
-        <button> Start match</button>
-        <button> See instructions</button>
-        <button> Classification</button>
-        <button> Propose a draw</button>
-        <button> Give up</button>
+        <label for="select-opponent">Play against:</label>
+        <select id="select-opponent">
+            <option value="computer" selected>Computer</option>
+            <option value="player" disabled>Another player</option> <!-- (Próxima entrega) -->
+        </select>
+
+        <label for="select-turn">First player:</label>
+        <select id="select-turn">
+            <option value="red">Red Pieces (You)</option>
+            <option value="blue">Blue Pieces (Computer)</option>
+        </select>
+
+        <label for="select-ia">IA Level:</label>
+        <select id="select-ia">
+            <option value="easy">Easy (Random moves)</option>
+            <option value="difficult">Difficult (Prioritise captures)</option>
+        </select>
+
+        <button id="btn-apply-settings">Apply Settings</button>
+    </section>
+
+    <nav id="commands">
+        <button id="btn-start">Start Game</button>
+        <button id="btn-instructions">See instructions</button>
+        <button id="btn-ratings">Ratings</button>
+        <button id="btn-draw">Propose a draw</button>
+       	<button id="btn-pass">Skip turn</button>
+        <button id="btn-giveup">Give up</button>
     </nav>
 
     <!-- Mensajes (Turnos, errores, victorias)-->
@@ -47,22 +73,24 @@
     <main id="tablero">
         <h2>Game Board</h2>
         <!-- se generara aqui el tablero con JavaScript-->
+        <!-- El JS inyectará aquí el #tablero-grid -->
     </main>
 
     <!-- Instrucciones (panel superpuesto oculto por defecto)-->
-    <dialog id="instrucciones">
+    <dialog id="Instructions">
         <h2>Game Rules</h2>
         <p>Here you will find the instructions for playing Alquerque.</p>
         <button id="close-instructions">Close</button>
     </dialog>
 
     <!-- Clasificiones (Panel superpuesto oculto por defecto)-->
-     <dialog id="clasificaciones">
+     <dialog id="ratings">
         <h2>Rankings</h2>
         <p>Here you will find the player rankings.</p>
         <button id="close-rankings">Close</button>
     </dialog>
 
+<script src="main.js"></script> <!-- Enlazamos el js -->
 
 </body>
 </html>

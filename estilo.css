@@ -130,3 +130,45 @@ hr {
   color: #ffffff;
 }
 
+/* =========================================
+   ESTILOS DEL TABLERO Y FICHAS (AÑADIR AL FINAL)
+   ========================================= */
+
+#tablero-grid {
+  display: grid;
+  justify-content: center;
+  margin-top: 20px;
+  background-color: transparent;
+}
+
+.box {
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+}
+
+/* Dibujamos las líneas de la cuadrícula con un pseudo-elemento para que no pise a las fichas */
+.box::before {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border: 1px solid #888;
+  z-index: 1;
+}
+
+/* Fichas - Usamos z-index para que queden por encima de las líneas */
+.red-piece, .blue-piece {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  z-index: 2;
+  box-shadow: inset -3px -3px 5px rgba(0,0,0,0.3), 2px 2px 4px rgba(0,0,0,0.4);
+}
+
+.red-piece { background-color: #ff4d4d; }
+.blue-piece { background-color: #4d4dff; }
