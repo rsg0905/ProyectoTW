@@ -92,36 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const offset = 30; // La mitad de 60px (centro de la casilla)
         const maxOffset = totalDimension - 30;
 
-        // Dibujar las líneas rectas (horizontales y verticales)
-        for(let i = 0; i < actualSize; i++) {
-            let pos = offset + (i * 60);
-            crearLinea(offset, pos, maxOffset, pos); // Horizontal
-            crearLinea(pos, offset, pos, maxOffset); // Vertical
-        }
-
-        // Dibujar las líneas diagonales correctamente (solo desde nodos pares)
-        for(let row = 0; row < actualSize; row++) {
-            for(let col = 0; col < actualSize; col++) {
-                // En el alquerque, solo las casillas (row + col) pares tienen diagonales
-                if ((row + col) % 2 === 0) {
-                    let cx1 = offset + (col * 60);
-                    let cy1 = offset + (row * 60);
-                    
-                    // Diagonal hacia abajo-derecha
-                    if (row + 1 < actualSize && col + 1 < actualSize) {
-                        let cx2 = offset + ((col + 1) * 60);
-                        let cy2 = offset + ((row + 1) * 60);
-                        crearLinea(cx1, cy1, cx2, cy2);
-                    }
-                    // Diagonal hacia abajo-izquierda
-                    if (row + 1 < actualSize && col - 1 >= 0) {
-                        let cx2 = offset + ((col - 1) * 60);
-                        let cy2 = offset + ((row + 1) * 60);
-                        crearLinea(cx1, cy1, cx2, cy2);
-                    }
-                }
-            }
-        }
+        
 
         // Añadir el SVG y el Grid al DOM
         contenedorTablero.appendChild(svg);
