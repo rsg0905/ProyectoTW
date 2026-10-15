@@ -61,20 +61,80 @@ document.addEventListener('DOMContentLoaded', () => {
     } 
 
     function drawBoard(){
-        grid.innerHTML = ''; // limpiamos visualmente el tablero
+        contenedorTablero.innerHTML = ''; // Limpiamos el contenedor completo
         
-        // Corregido: uso de backticks (`) para interpolar variables
+        // 1. Crear el contenedor de las casillas (las intersecciones)
+        const grid = document.createElement('div');
+        grid.id = 'tablero-grid';
         grid.style.gridTemplateColumns = `repeat(${actualSize}, 60px)`; 
         grid.style.gridTemplateRows = `repeat(${actualSize}, 60px)`; 
+        
+        // 2. Crear el SVG para dibujar las líneas
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.id = "tablero-lineas";
+        
+        // Tamaño total del SVG basado en el número de celdas * 60px
+        const totalDimension = actualSize * 60;
+        
+        // Función auxiliar para dibujar líneas en el SVG
+        function crearLinea(x1, y1, x2, y2) {
+            const linea = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            linea.setAttribute("x1", x1);
+            linea.setAttribute("y1", y1);
+            linea.setAttribute("x2", x2);
+            linea.setAttribute("y2", y2);
+            linea.setAttribute("stroke", "#888");
+            linea.setAttribute("stroke-width", "3");
+            svg.appendChild(linea);
+        }
 
+        // Centro geométrico de la primera y última celda para alinear las líneas
+        const offset = 30; // La mitad de 60px (centro de la casilla)
+        const maxOffset = totalDimension - 30;
+
+        // Dibujar las líneas rectas (horizontales y verticales)
+        for(let i = 0; i < actualSize; i++) {
+            let pos = offset + (i * 60);
+            crearLinea(offset, pos, maxOffset, pos); // Horizontal
+            crearLinea(pos, offset, pos, maxOffset); // Vertical
+        }
+
+        // Dibujar las líneas diagonales correctamente (solo desde nodos pares)
+        for(let row = 0; row < actualSize; row++) {
+            for(let col = 0; col < actualSize; col++) {
+                // En el alquerque, solo las casillas (row + col) pares tienen diagonales
+                if ((row + col) % 2 === 0) {
+                    let cx1 = offset + (col * 60);
+                    let cy1 = offset + (row * 60);
+                    
+                    // Diagonal hacia abajo-derecha
+                    if (row + 1 < actualSize && col + 1 < actualSize) {
+                        let cx2 = offset + ((col + 1) * 60);
+                        let cy2 = offset + ((row + 1) * 60);
+                        crearLinea(cx1, cy1, cx2, cy2);
+                    }
+                    // Diagonal hacia abajo-izquierda
+                    if (row + 1 < actualSize && col - 1 >= 0) {
+                        let cx2 = offset + ((col - 1) * 60);
+                        let cy2 = offset + ((row + 1) * 60);
+                        crearLinea(cx1, cy1, cx2, cy2);
+                    }
+                }
+            }
+        }
+
+        // Añadir el SVG y el Grid al DOM
+        contenedorTablero.appendChild(svg);
+        contenedorTablero.appendChild(grid);
+
+        // 3. Dibujar las casillas interactivas y las fichas
         for(let row = 0; row < actualSize; row++){
-            for(let col=0; col < actualSize; col++) { // Corregido: col < actualSize (antes era 0)
+            for(let col = 0; col < actualSize; col++) { 
                 const box = document.createElement('div'); 
                 box.classList.add('box'); 
 
                 const value = boardState[row][col]; 
 
-                // pintar fichas
                 if(value === 1) {
                     const piece = document.createElement('div'); 
                     piece.classList.add('red-piece'); 
@@ -85,9 +145,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     box.appendChild(piece); 
                 }
 
-                // Corregido: usar === para comparar
                 if(checkboxTicked && checkboxTicked.row === row && checkboxTicked.col === col){
-                    box.style.backgroundColor = 'rgba(255,255,0,0.4)'; 
+                    box.style.backgroundColor = 'rgba(255,255,0,0.5)'; 
+                    box.style.borderRadius = '50%'; // Resaltado circular para adaptarse a la intersección
                 }
 
                 box.addEventListener('click', () => handleClickBox(row, col, value)); 

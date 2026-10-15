@@ -133,12 +133,31 @@ hr {
 /* =========================================
    ESTILOS DEL TABLERO Y FICHAS (AÑADIR AL FINAL)
    ========================================= */
+/* =========================================
+   ESTILOS DEL TABLERO Y FICHAS (INTERSECCIONES)
+   ========================================= */
+
+#tablero {
+  position: relative;
+  display: inline-block; /* Ajusta el contenedor al tamaño de la cuadrícula */
+  margin-top: 20px;
+}
 
 #tablero-grid {
   display: grid;
-  justify-content: center;
-  margin-top: 20px;
-  background-color: transparent;
+  position: relative;
+  z-index: 2; /* Mantiene las casillas y fichas por encima de las líneas */
+}
+
+/* SVG generado dinámicamente para las líneas */
+#tablero-lineas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1; /* Coloca las líneas por debajo de las fichas */
+  pointer-events: none; /* Evita que el SVG interfiera con los clics */
 }
 
 .box {
@@ -148,25 +167,13 @@ hr {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  position: relative;
 }
 
-/* Dibujamos las líneas de la cuadrícula con un pseudo-elemento para que no pise a las fichas */
-.box::before {
-  content: '';
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  border: 1px solid #888;
-  z-index: 1;
-}
-
-/* Fichas - Usamos z-index para que queden por encima de las líneas */
+/* Fichas */
 .red-piece, .blue-piece {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  z-index: 2;
   box-shadow: inset -3px -3px 5px rgba(0,0,0,0.3), 2px 2px 4px rgba(0,0,0,0.4);
 }
 
