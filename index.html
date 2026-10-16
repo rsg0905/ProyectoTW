@@ -77,15 +77,43 @@
 
     <!-- Instrucciones (panel superpuesto oculto por defecto)-->
     <dialog id="Instructions">
-        <h2>Game Rules</h2>
-        <p>Here you will find the instructions for playing Alquerque.</p>
+        <h2>Game Rules (Alquerque)</h2>
+        <ul>
+            <li><strong>Board & Pieces:</strong> The game is played on a 5x5 board. Each player starts with 12 pieces.</li>
+            <li><strong>Movement:</strong> Players take turns moving a piece to an adjacent empty spot following the lines. Pieces cannot move backwards to their starting row.</li>
+            <li><strong>Capturing:</strong> Captures are made by jumping over an opponent's piece into a straight line. Multiple captures in a single turn are allowed.</li>
+            <li><strong>Huffing Rule (Soplo):</strong> If a capture is possible, it is mandatory. If a player makes a different move instead of capturing, the piece that could have captured can be removed from the board from the oponent.</li>
+            <li><strong>End of Game:</strong> A player loses if they run out of pieces or have no valid moves left.</li>
+        </ul>
         <button id="close-instructions">Close</button>
     </dialog>
 
-    <!-- Clasificiones (Panel superpuesto oculto por defecto)-->
-     <dialog id="ratings">
+    <!-- Clasificaciones (Panel superpuesto oculto por defecto)-->
+    <dialog id="ratings">
         <h2>Rankings</h2>
-        <p>Here you will find the player rankings.</p>
+        <p>Your local match statistics against the computer:</p>
+        <table border="1" style="width: 100%; text-align: center; border-collapse: collapse;">
+            <thead>
+            <tr>
+                <th>Board Size</th>
+                <th>Wins</th>
+                <th>Losses</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>3x3</td>
+                <td>0</td>
+                <td>0</td>
+            </tr>
+            <tr>
+                <td>5x5</td>
+                <td>0</td>
+                <td>0</td>
+            </tr>
+            </tbody>
+        </table>
+        <br>
         <button id="close-rankings">Close</button>
     </dialog>
 
