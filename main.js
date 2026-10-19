@@ -30,6 +30,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let interactionMode = 'select_piece'; 
     // casilla seleccionada
     let checkboxTicked = null; // guardará la fila y columna de la pieza clicada 
+    // piezas susceptibles al soplo
+    let huffCandidates = []; // Array de {row, col}
 
     // EVENTOS DE LA INTERFAZ (abrir/cerrar paneles)
     btnSeeInstructions.addEventListener('click', () => dialogInstructions.showModal()); 
@@ -145,7 +147,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     piece.classList.add('blue-piece'); 
                     box.appendChild(piece); 
                 }
-
+                // NUEVO: resaltar piezas soplables
+               if (huffCandidates.some(p => p.row === row && p.col === col)) {
+                   box.classList.add('huffable');
+                 }
                 if(checkboxTicked && checkboxTicked.row === row && checkboxTicked.col === col){
                     box.style.backgroundColor = 'rgba(255,255,0,0.5)'; 
                     box.style.borderRadius = '50%'; // Resaltado circular para adaptarse a la intersección
@@ -158,57 +163,101 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleClickBox(row, col, value) {
-        if(interactionMode === 'select_piece') {
-            // Solo puedes seleccionar tus propias fichas
-            if(value === playerTurn) { 
-                checkboxTicked = {row: row, col: col}; 
-                interactionMode = 'select_destination'; 
-                displayMessages.innerText = `You've selected your piece. Tap the destination.`; 
-                drawBoard(); 
-            } else {
-                displayMessages.innerText = 'You must select a piece of your color (Red).'; 
+    if(interactionMode === 'select_piece') {
+
+        // comprobar si se puede soplar una pieza del oponente
+        if (huffCandidates.length > 0 && value === (playerTurn === 1 ? 2 : 1)) {
+            let isHuffable = huffCandidates.some(p => p.row === row && p.col === col);
+
+            if (isHuffable) {
+                boardState[row][col] = 0;
+                huffCandidates = [];
+                displayMessages.innerText = `You huffed an opponent's piece! Now make your move.`;
+                drawBoard();
+                return;
             }
-        } else if(interactionMode === 'select_destination') {
-            if(row === checkboxTicked.row && col === checkboxTicked.col) {
+        }
+
+        // Solo puedes seleccionar tus propias fichas
+        if(value === playerTurn) { 
+            checkboxTicked = {row: row, col: col}; 
+            interactionMode = 'select_destination'; 
+            displayMessages.innerText = `You've selected your piece. Tap the destination.`; 
+            drawBoard(); 
+        } else {
+            displayMessages.innerText = 'You must select a piece of your color.'; 
+        }
+
+    } else if(interactionMode === 'select_destination') {
+
+        if(row === checkboxTicked.row && col === checkboxTicked.col) {
+            checkboxTicked = null; 
+            interactionMode = 'select_piece'; 
+            displayMessages.innerText = `Selection canceled.`; 
+            drawBoard(); 
+
+        } else if(value === 0) {
+
+            let esMovimiento = validateNormalMovement(
+                checkboxTicked.row, checkboxTicked.col, row, col, playerTurn
+            );
+
+            let esCaptura = validateCapture(
+                checkboxTicked.row, checkboxTicked.col, row, col, playerTurn
+            );
+
+            // ya no se bloquea el movimiento si hay captura obligatoria.
+            if (esMovimiento || esCaptura) {
+
+                // Comprobar si antes de mover había captura disponible
+                let captureWasAvailable = compulsoryCaptureExists(playerTurn);
+                let capturingPieces = [];
+
+                if (captureWasAvailable && !esCaptura) {
+                    capturingPieces = getCapturingPieces(playerTurn);
+                }
+
+                // Limpiar candidatos de soplo del turno actual
+                huffCandidates = [];
+
+                // Mover la pieza
+                boardState[row][col] = playerTurn; 
+                boardState[checkboxTicked.row][checkboxTicked.col] = 0; 
+
+                // Si fue captura, eliminar la pieza comida
+                if (esCaptura) {
+                    let medioR = checkboxTicked.row + (row - checkboxTicked.row) / 2;
+                    let medioC = checkboxTicked.col + (col - checkboxTicked.col) / 2;
+                    boardState[medioR][medioC] = 0; 
+                }
+
                 checkboxTicked = null; 
                 interactionMode = 'select_piece'; 
-                displayMessages.innerText = `Selection canceled.`; 
-                drawBoard(); 
-            } else if(value === 0) {
-                let esMovimiento = validateNormalMovement(checkboxTicked.row, checkboxTicked.col, row, col, playerTurn);
-                let esCaptura = validateCapture(checkboxTicked.row, checkboxTicked.col, row, col, playerTurn);
 
-                // Si es un movimiento normal pero hay capturas obligatorias disponibles en el tablero, lo bloqueamos
-                if (esMovimiento && compulsoryCaptureExists(playerTurn)) {
-                    displayMessages.innerText = 'Illegal move: You must capture if possible.';
-                    return;
-                }
+                // Cambiar turno
+                playerTurn = playerTurn === 1 ? 2 : 1; 
 
-                if (esMovimiento || esCaptura) {
-                    // Mover la pieza
-                    boardState[row][col] = playerTurn; 
-                    boardState[checkboxTicked.row][checkboxTicked.col] = 0; 
-                    
-                    // Si fue captura, eliminar la pieza comida del tablero
-                    if (esCaptura) {
-                        let medioR = checkboxTicked.row + (row - checkboxTicked.row) / 2;
-                        let medioC = checkboxTicked.col + (col - checkboxTicked.col) / 2;
-                        boardState[medioR][medioC] = 0; 
+                // NUEVO: preparar soplo para el siguiente jugador
+                if (captureWasAvailable && !esCaptura) {
+                    huffCandidates = capturingPieces;
+
+                    if (huffCandidates.length > 0) {
+                        displayMessages.innerText = `Player ${playerTurn}, you may huff an opponent's piece that failed to capture. Click on it to remove it, or make your move.`;
+                    } else {
+                        displayMessages.innerText = `Valid Movement. ${playerTurn} turn.`;
                     }
-
-                    checkboxTicked = null; 
-                    interactionMode = 'select_piece'; 
-                    // Cambiar turno (esto deberás vincularlo a tu IA en el siguiente paso)
-                    playerTurn = playerTurn === 1 ? 2 : 1; 
-
-                    displayMessages.innerText = `Valid Movement. ${playerTurn} turn.`; 
-                    drawBoard(); 
                 } else {
-                    displayMessages.innerText = 'Invalid movement (Check lines and rules).'; 
+                    displayMessages.innerText = `Valid Movement. ${playerTurn} turn.`;
                 }
+
+                drawBoard(); 
+
+            } else {
+                displayMessages.innerText = 'Invalid movement (Check lines and rules).'; 
             }
         }
     }
+}
 
     // Referencias a los botones
     const btnPass = document.getElementById('btn-pass');
@@ -222,11 +271,11 @@ document.addEventListener('DOMContentLoaded', () => {
         playerTurn = playerTurn === 1 ? 2 : 1;
 
         // Limpiamos cualquier seleccion a medias
-        checkboxTicked = null;
+          checkboxTicked = null;
+         huffCandidates = []; // candidatos a soplo
         interactionMode = 'select_piece';
-
         displayMessages.innerText = `You skipped your turn. It is now Player ${playerTurn}'s turn.`;
-        drawBoard();
+         drawBoard();
     });
 
     // Give up
@@ -236,6 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // El jugador se rinde y el mensaje indica que ha perdido
         displayMessages.innerText = "You gave up. The computer wins the match!";
 
+        huffCandidates = [];
         // Cambiamos el estado para bloquear nuevos clics en el tablero
         interactionMode = 'game_over';
     });
@@ -336,12 +386,37 @@ document.addEventListener('DOMContentLoaded', () => {
         //no hay saltos obligatorios para el jugador activo
         return false;
     }
+    function getCapturingPieces(player) {
+    let pieces = [];
+    let jumps = [ [-2, 0], [2, 0], [0, -2], [0, 2], [-2, -2], [-2, 2], [2, -2], [2, 2] ];
+
+    for (let r = 0; r < actualSize; r++) {
+        for (let c = 0; c < actualSize; c++) {
+            if (boardState[r][c] === player) {
+                for (let s of jumps) {
+                    let destR = r + s[0];
+                    let destC = c + s[1];
+
+                    if (destR >= 0 && destR < actualSize && destC >= 0 && destC < actualSize) {
+                        if (boardState[destR][destC] === 0 && validateCapture(r, c, destR, destC, player)) {
+                            pieces.push({row: r, col: c});
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return pieces;
+}
     
     // APLICAR CONFIGURACIÓN.  
     btnApply.addEventListener('click', ()=> {
         actualSize = parseInt(selectSize.value); 
         generateDashboard(actualSize); 
         checkboxTicked = null;
+        huffCandidates = []; // NUEVO
         interactionMode = 'select_piece'; 
         // Corregido: uso de backticks
         displayMessages.innerText = `Board generated with dimensions ${actualSize}x${actualSize}. Let the game begin!`;

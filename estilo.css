@@ -173,3 +173,10 @@ hr {
 
 .red-piece { background-color: #ff4d4d; }
 .blue-piece { background-color: #4d4dff; }
+
+/* Resaltado de piezas que pueden ser sopladas */
+.huffable .red-piece,
+.huffable .blue-piece {
+    border: 3px solid #ffcc00;
+    box-shadow: 0 0 10px #ffcc00;
+}
