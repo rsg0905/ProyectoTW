@@ -1,16 +1,19 @@
-	<!DOCTYPE html>
+<!-- esqueleto estructural de la aplicación. Objetivo: definir semánticamente que piezas
+ existen en la pantalla para que el CSS las pinte y el JavaScript las controle-->
+
+<!DOCTYPE html>
 
 <html lang = "en">
   <head>
     <meta charset="UTF-8">  <!--para caracteres acentuados-->
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1"> <!--para responsive design (movil)-->
     <title>Alquerque Web</title>
-    <link rel="stylesheet" href="estilo.css">  
+    <link rel="stylesheet" href="estilo.css"> <!--conecta el CSS para aplicar capa visual-->
   </head>
 
 
 <body>
-    <!--Logotipo-->
+    <!--Logotipo: Definir la cabecera principal-->
     <header id="logotype">
         <h1>Alquerque Web</h1>
     </header>
@@ -52,6 +55,7 @@
         <button id="btn-apply-settings">Apply Settings</button>
     </section>
 
+    <!-- Controles del juego -->
     <nav id="commands">
         <button id="btn-start">Start Game</button>
         <button id="btn-instructions">See instructions</button>
@@ -75,7 +79,7 @@
         <!-- El JS inyectará aquí el #tablero-grid -->
     </main>
 
-    <!-- Instrucciones (panel superpuesto oculto por defecto)-->
+    <!-- Instrucciones (dialog: panel superpuesto oculto por defecto)-->
     <dialog id="Instructions">
         <h2>Game Rules (Alquerque)</h2>
         <ul>
@@ -117,6 +121,8 @@
         <button id="close-rankings">Close</button>
     </dialog>
 
+<!-- Asegurar que el navegador primero lea y dibuje todo el HTML en la pantalla y al final
+ cargue la lógica (JS). -->
 <script src="main.js"></script> <!-- Enlazamos el js -->
 
 </body>
