@@ -288,6 +288,36 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Referencias a los botones
+    const btnPass = document.getElementById('btn-pass');
+    const btnGiveUp = document.getElementById('btn-giveup');
+
+    // Skip turn
+    btnPass.addEventListener('click', () => {
+        if (interactionMode === 'game_over') return;
+
+        // Cambiamos el turno al oponente
+        playerTurn = playerTurn === 1 ? 2 : 1;
+
+        // Limpiamos cualquier seleccion a medias
+        checkboxTicked = null;
+        interactionMode = 'select_piece';
+
+        displayMessages.innerText = `You skipped your turn. It is now Player ${playerTurn}'s turn.`;
+        drawBoard();
+    });
+
+    // Give up
+    btnGiveUp.addEventListener('click', () => {
+        if (interactionMode === 'game_over') return;
+
+        // El jugador se rinde y el mensaje indica que ha perdido
+        displayMessages.innerText = "You gave up. The computer wins the match!";
+
+        // Cambiamos el estado para bloquear nuevos clics en el tablero
+        interactionMode = 'game_over';
+    });
+
     function conectedPieces(r1, c1, r2, c2){
         let dr = Math.abs(r1 - r2);
         let dc = Math.abs(c1 - c2);
