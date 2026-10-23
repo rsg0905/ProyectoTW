@@ -34,11 +34,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // casilla seleccionada
     let checkboxTicked = null; // guardará la fila y columna de la pieza clicada 
 
-    // [MULTI-CAPTURA] viene de main: almacena las posiciones visitadas durante un turno de captura múltiple
+    // almacena las posiciones visitadas durante un turno de captura múltiple
     // (incluye el origen inicial y cada casilla de aterrizaje de la cadena)
     let visitedPositions = []; 
 
-    // [SOPLO] viene de la rama soplo: piezas del oponente que pueden ser sopladas al inicio del turno
+    // piezas del oponente que pueden ser sopladas al inicio del turno
     // (se llenan cuando el jugador anterior tenía captura disponible y no la hizo)
     let huffCandidates = []; 
 
@@ -183,7 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     box.appendChild(piece);
                 }
 
-                // [SOPLO] Si esta casilla contiene una pieza del oponente que puede ser soplada,
+                // Si esta casilla contiene una pieza del oponente que puede ser soplada,
                 // le añadimos la clase 'huffable' para resaltarla visualmente (borde amarillo vía CSS).
                 if (huffCandidates.some(p => p.row === row && p.col === col)) {
                     box.classList.add('huffable');
@@ -211,7 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // ======================= MODO: seleccionar pieza =======================
         if(interactionMode === 'select_piece') { //el juego espera que el usuario seleccione una ficha propia para moverla
 
-            // [SOPLO] Antes de cualquier otra cosa, comprobar si el jugador quiere ejercer el soplo.
+            //  Antes de cualquier otra cosa, comprobar si el jugador quiere ejercer el soplo.
             // Solo es válido si hay candidatos pendientes y el clic cae sobre una pieza del rival.
             if (huffCandidates.length > 0 && value === (playerTurn === 1 ? 2 : 1)) {
                 let isHuffable = huffCandidates.some(p => p.row === row && p.col === col);
@@ -241,7 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
             //si el usuario clicó la misma casilla que ya había seleccionado para mover la ficha, se cancela la selección y se vuelve al modo de seleccionar pieza. 
             if(row === checkboxTicked.row && col === checkboxTicked.col) {
 
-                // [MULTI-CAPTURA] No permitir cancelar si hay una cadena de capturas en curso
+                // No permitir cancelar si hay una cadena de capturas en curso
                 if(visitedPositions.length > 0) {
                     displayMessages.innerText = 'You are in the middle of a multi-capture. You cannot cancel now.';
                     return; 
@@ -259,7 +259,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 let esCaptura = validateCapture(checkboxTicked.row, checkboxTicked.col, row, col, playerTurn);
                 //guarda true si es un salto legal sobre un enemigo (captura)
 
-                // [MULTI-CAPTURA] Comprobar si la casilla de destino ya fue visitada en esta cadena
+                // Comprobar si la casilla de destino ya fue visitada en esta cadena
                 let visited = visitedPositions.some(pos => pos.row === row && pos.col === col); 
                 if(esCaptura && visited) {
                     displayMessages.innerText = 'You cannot land on a previously visited square during a multi-capture.';
@@ -272,19 +272,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
 
-                // [SOPLO] Se ELIMINA el bloqueo de captura obligatoria.
+                // Se ELIMINA el bloqueo de captura obligatoria.
                 // En su lugar, la penalización es la regla del soplo: si el jugador mueve
                 // teniendo capturas disponibles, el rival podrá soplar una de sus piezas.
                 // (No hay if de compulsoryCaptureExists aquí.)
 
                 if (esMovimiento || esCaptura) {
 
-                    // [SOPLO] Guardamos el origen real antes de modificar checkboxTicked,
+                    // Guardamos el origen real antes de modificar checkboxTicked,
                     // necesario para filtrar luego qué piezas podían capturar.
                     let originRow = checkboxTicked.row;
                     let originCol = checkboxTicked.col;
 
-                    // [SOPLO] Comprobar si ANTES del movimiento había alguna captura disponible.
+                    // Comprobar si ANTES del movimiento había alguna captura disponible.
                     // Solo miramos al inicio de la cadena (visitedPositions vacío) para no
                     // confundir con capturas ya realizadas en el mismo turno.
                     let captureWasAvailable = compulsoryCaptureExists(playerTurn);
