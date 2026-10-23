@@ -1,51 +1,49 @@
-/*establecer la base visual*/
 html {
-  font-size: 100%;/*tamaño de fuente base 100% para que se ajuste a la configuración del usuario*/
+  font-size: 100%;            
 }
 
 body {
  
-  background-color: #e0f0f5;   /* Color de fondo azul suave*/  
+  background-color: #e0f0f5;    
 
+  
+  font-family: Arial, 'Helvetica Neue', sans-serif;
+  font-size: 16px;
+  color: #1a0a0a;
 
-  font-family: Arial, 'Helvetica Neue', sans-serif; /*fuente principal*/
-  font-size: 16px;/*tamaño de fuente principal*/
-  color: #1a0a0a; /* Color de texto principal */
+  line-height: 1.6;           
+  word-spacing: 1px;          
+  letter-spacing: 0.3px;        
 
-  line-height: 1.6; /* Espaciado entre líneas */
-  word-spacing: 1px; /* Espaciado entre palabras */
-  letter-spacing: 0.3px; /* Espaciado entre letras */
-
-  /*Hacer que todo el contenido se limite a una columna central de 750 pixeles, dejando márgenes 
-  laterales automáticos a los lados*/
+ 
   max-width: 750px;
   margin: 0 auto;            
   padding: 2rem 1.5rem;
 }
 
-/*TITULARES*/
+
 h1 {
   font-family: 'Helvetica Neue', Arial, sans-serif;
-  font-size: 2.2rem; /* Tamaño de fuente del título */
-  color: #0b3d5c; /* Color del título */
-  text-align: center; /*CENTRADO*/
-  letter-spacing: 1px; /*ESPACIADO ENTRE LETRAS*/
-  padding-bottom: 0.5rem; /*ESPACIADO INFERIOR*/
-  border-bottom: 3px solid #0b3d5c; /*BORDER INFERIOR*/
-  margin-bottom: 1.5rem; /*MARGEN INFERIOR*/
+  font-size: 2.2rem;
+  color: #0b3d5c;
+  text-align: center;
+  letter-spacing: 1px;
+  padding-bottom: 0.5rem;
+  border-bottom: 3px solid #0b3d5c;
+  margin-bottom: 1.5rem;
 }
 
 h2 {
   font-family: 'Helvetica Neue', Arial, sans-serif;
   font-size: 1.5rem;
-  color: #145f8c; /* Color del subtítulo */
-  margin-top: 2rem; /* Margen superior del subtítulo */
-  margin-bottom: 1rem; /* Margen inferior del subtítulo */
-  padding-left: 0.6rem; /* Espaciado izquierdo del subtítulo */
-  border-left: 5px solid #145f8c; /* Border izquierdo del subtítulo */
+  color: #145f8c;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  padding-left: 0.6rem;
+  border-left: 5px solid #145f8c;
 }
 
-/*PARRAFOS*/
+
 p {
   margin-top: 0;
   margin-bottom: 1.2rem;    
@@ -53,9 +51,7 @@ p {
 }
 
 
-/*FORMATO DE TEXTO
-Las cursivas (em) se resaltan en un tono gris oscuro
-Las negritas (strong) se resaltan en un tono rojo oscuto*/
+
 em {
   font-style: italic;
   color: #555;
@@ -66,27 +62,25 @@ strong {
   color: #b30000;
 }
 
-/*ENLACES*/
+
 a {
   color: #145f8c;
   text-decoration: none;
-  /*Usar linea punteada */
   border-bottom: 1px dotted #145f8c;
   transition: color 0.2s ease;
 }
 
-a:hover, /*al pasar el ratón los enlaces cambian de color */
+a:hover,
 a:focus {
   color: #b30000;
   border-bottom-color: #b30000;
 }
 
-/*al visitar un enlace cambia de color */
 a:visited {
   color: #6a3d9a;
 }
 
-/*LISTAS: Tienen márgenes ajustados para que no se peguen los elementos superiores e inferiores*/
+
 ol, ul {
   margin-top: 0.5rem;
   margin-bottom: 1rem;
@@ -107,36 +101,30 @@ hr {
   opacity: 0.4;
 }
 
-/*DISEÑO ADAPTABLE: Detecta si el usuario está viendo la web desde un móvil. si es así, reduce 
-ligeramente el tamaño general de la letra, encoge los títulos y quita márgenes para aprovechar 
-al máximo el espacio de la pantalla */
 @media (max-width: 600px) {
-  body { font-size: 15px; padding: 1rem; } /*reducción del tamaño de fuente y padding (encoger margenes) para móviles*/
+  body { font-size: 15px; padding: 1rem; }
   h1   { font-size: 1.7rem; }
   h2   { font-size: 1.25rem; }
 }
 
-/*NAVEGACIÓN (BOTONES DE MENU)
-Convierte una lista normal de enlacer un una botonera estructurada. 
-A cada enlace se le da una forma de bloque (display:block), un borde y un fondo azul claro*/
 .menu {
-  list-style: none; /* Elimina los puntos de la lista */
-  padding: 0; /* Elimina el padding de la lista */
-  margin: 0 0 2rem 0; /* Margen inferior para separar del contenido siguiente */
+  list-style: none;    
+  padding: 0;
+  margin: 0 0 2rem 0;
 }
+
 
 .menu a {
-  display: block;  /* Convierte los enlaces en bloques para que ocupen todo el ancho disponible */             
-  padding: 10px;  /* Añade un padding interno para que los enlaces sean más grandes y fáciles de clicar */
-  border: 1px solid #0b3d5c; /* Añade un borde azul oscuro alrededor de los enlaces */
-  background-color: #e8f4f8; /* Color de fondo azul claro */
-  color: #0b3d5c; /* Color del texto azul oscuro */
-  text-decoration: none; /* Elimina el subrayado de los enlaces */
-  font-family: Arial, sans-serif; /* Tipo de fuente para los enlaces */
-  text-align: center; /* Centra el texto dentro de los enlaces */
+  display: block;              
+  padding: 10px;               
+  border: 1px solid #0b3d5c;   
+  background-color: #e8f4f8;
+  color: #0b3d5c;
+  text-decoration: none;
+  font-family: Arial, sans-serif;
+  text-align: center;
 }
 
-/*Al pasar el ratón sobre los enlaces el fondo se vuelve azul oscuro y el texto blanco*/
 .menu a:hover {
   background-color: #0b3d5c;
   color: #ffffff;
@@ -144,41 +132,31 @@ A cada enlace se le da una forma de bloque (display:block), un borde y un fondo 
 
 
 #tablero {
-  position: relative; /*permite que cualquier elementos absoluto dentro de el se posiciona usando este contenedor
-  como referencia, y no la página entera */
+  position: relative;
   display: inline-block; /* Ajusta el contenedor al tamaño de la cuadrícula */
-  margin-top: 20px; /* Añade un margen superior para separar el tablero del contenido anterior */
+  margin-top: 20px;
 }
 
-/*Cuadricula superior donde residen las casillaas interactivas. Al tener un z-index mayor 
-se asegura de estar siempre por encima de las lineas vectoriales */
 #tablero-grid {
-  display: grid; /* Utiliza un sistema de cuadrícula para organizar las casillas */
-  position: relative; /* Permite que las casillas se posicionen relativamente dentro del tablero */
+  display: grid;
+  position: relative;
   z-index: 2; /* Mantiene las casillas y fichas por encima de las líneas */
 }
 
-/* SVG generado dinámicamente para las líneas
-Es el lienzo SVG donde se dibuja las lineas mediante JavaScript */
+/* SVG generado dinámicamente para las líneas */
 #tablero-lineas {
-  /*para ocupar exactamente el mismo tamaño y posición de la cuadrícula*/
-  position: absolute; 
+  position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
   z-index: 1; /* Coloca las líneas por debajo de las fichas */
-  pointer-events: none; /* Evita que el SVG interfiera con los clics. Esto hace que SVG sea
-  'fantasma' para el ratón, permitiendo que los clics lo atraviesen y lleguen a las casillas. */
+  pointer-events: none; /* Evita que el SVG interfiera con los clics */
 }
 
-/*CASILLAS:*/
 .box {
-  /*cuadros 60x60 pixeles */
-  width: 60px; 
+  width: 60px;
   height: 60px;
-  /*Asegurar que cualquier cosa que metamos dentro (como una ficha) quede centrada matemáticamente 
-  y perfectamente alineada en vertical y horizontal.*/
   display: flex;
   align-items: center;
   justify-content: center;
@@ -187,18 +165,18 @@ Es el lienzo SVG donde se dibuja las lineas mediante JavaScript */
 
 /* Fichas */
 .red-piece, .blue-piece {
-  /*Tamaño de 40x40 píxeles*/
   width: 40px;
   height: 40px;
-  border-radius: 50%; /* Hace que las fichas sean circulares. Las convierte de cuadrados a circulos perfectos. */
-
-  /*Añadde un efecto tridimensional muy pulido usando dos sombras a la vez,
-    1º crea una sombra interior que le da volumen esférico
-    2º proyecta una sombra en el suelo para que parezca que la ficha esta apoyada sobre el tablero*/
+  border-radius: 50%;
   box-shadow: inset -3px -3px 5px rgba(0,0,0,0.3), 2px 2px 4px rgba(0,0,0,0.4);
-
 }
 
-/* Colores de las fichas */
 .red-piece { background-color: #ff4d4d; }
 .blue-piece { background-color: #4d4dff; }
+
+/* Resaltado de piezas que pueden ser sopladas */
+.huffable .red-piece,
+.huffable .blue-piece {
+    border: 3px solid #ffcc00;
+    box-shadow: 0 0 10px #ffcc00;
+}

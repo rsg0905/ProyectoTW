@@ -33,7 +33,14 @@ document.addEventListener('DOMContentLoaded', () => {
     let interactionMode = 'select_piece'; 
     // casilla seleccionada
     let checkboxTicked = null; // guardará la fila y columna de la pieza clicada 
-    let visitedPositions = []; // para almacenar las posiciones visitadas durante un turno de captura múltiple
+
+    // almacena las posiciones visitadas durante un turno de captura múltiple
+    // (incluye el origen inicial y cada casilla de aterrizaje de la cadena)
+    let visitedPositions = []; 
+
+    // piezas del oponente que pueden ser sopladas al inicio del turno
+    // (se llenan cuando el jugador anterior tenía captura disponible y no la hizo)
+    let huffCandidates = []; 
 
     // EVENTOS DE LA INTERFAZ (abrir/cerrar paneles)
     btnSeeInstructions.addEventListener('click', () => dialogInstructions.showModal()); 
@@ -176,6 +183,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     box.appendChild(piece);
                 }
 
+                // Si esta casilla contiene una pieza del oponente que puede ser soplada,
+                // le añadimos la clase 'huffable' para resaltarla visualmente (borde amarillo vía CSS).
+                if (huffCandidates.some(p => p.row === row && p.col === col)) {
+                    box.classList.add('huffable');
+                }
+
                 //comprober si la caja q está dibujando en ese momento es la misma que el usuario ha clicado para seleccionar una ficha (checkboxTicked). Si es así, se le aplica un estilo especial para que se vea resaltada.
                 if(checkboxTicked && checkboxTicked.row === row && checkboxTicked.col === col){
                    //si coinciden se aplica un estilo especial a la casilla para que se vea resaltada (fondo amarillo semitransparente y borde redondeado)
@@ -192,8 +205,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     //Máquina de estados para manejar la interacción del usuario con el tablero.
+    // Fusionada: incluye la lógica de la regla del soplo y la de captura múltiple.
     function handleClickBox(row, col, value) {
+
+        // ======================= MODO: seleccionar pieza =======================
         if(interactionMode === 'select_piece') { //el juego espera que el usuario seleccione una ficha propia para moverla
+
+            //  Antes de cualquier otra cosa, comprobar si el jugador quiere ejercer el soplo.
+            // Solo es válido si hay candidatos pendientes y el clic cae sobre una pieza del rival.
+            if (huffCandidates.length > 0 && value === (playerTurn === 1 ? 2 : 1)) {
+                let isHuffable = huffCandidates.some(p => p.row === row && p.col === col);
+                if (isHuffable) {
+                    // Eliminamos la pieza del oponente del tablero definitivamente
+                    boardState[row][col] = 0;
+                    // Solo se puede soplar una pieza: el resto de candidatos se descartan
+                    huffCandidates = [];
+                    displayMessages.innerText = `You huffed an opponent's piece! Now make your move.`;
+                    drawBoard();
+                    return; // Seguimos en select_piece para que el jugador realice su movimiento
+                }
+            }
+
             // Solo puedes seleccionar tus propias fichas
             if(value === playerTurn) { //comprobar si la ficha clicada pertenece al jugador activo (1 para rojo, 2 para azul)
                 checkboxTicked = {row: row, col: col}; 
@@ -204,14 +236,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 displayMessages.innerText = 'You must select a piece of your color (Red).'; 
             }
 
-            //el juego espera que el usuario seleccione un destino válido para mover la ficha previamente seleccionada
+        // ======================= MODO: seleccionar destino =======================
         } else if(interactionMode === 'select_destination') {
             //si el usuario clicó la misma casilla que ya había seleccionado para mover la ficha, se cancela la selección y se vuelve al modo de seleccionar pieza. 
             if(row === checkboxTicked.row && col === checkboxTicked.col) {
 
+                // No permitir cancelar si hay una cadena de capturas en curso
                 if(visitedPositions.length > 0) {
-                    displayMessages.innerText = 'You are un the middle of a multi-capture. You cannot cancel now.';
-                    return; // No permitir cancelar si hay capturas en curso
+                    displayMessages.innerText = 'You are in the middle of a multi-capture. You cannot cancel now.';
+                    return; 
                 }
 
                 checkboxTicked = null; 
@@ -226,24 +259,43 @@ document.addEventListener('DOMContentLoaded', () => {
                 let esCaptura = validateCapture(checkboxTicked.row, checkboxTicked.col, row, col, playerTurn);
                 //guarda true si es un salto legal sobre un enemigo (captura)
 
-                let visited = visitedPositions.some(pos => pos.row === row && pos.col === col); // comprueba si la posición de destino ha sido visitada
+                // Comprobar si la casilla de destino ya fue visitada en esta cadena
+                let visited = visitedPositions.some(pos => pos.row === row && pos.col === col); 
                 if(esCaptura && visited) {
                     displayMessages.innerText = 'You cannot land on a previously visited square during a multi-capture.';
                     return;
                 }
 
+                // [MULTI-CAPTURA] A mitad de cadena no se permite un movimiento normal, solo capturar
                 if(visitedPositions.length > 0 && esMovimiento) {
                     displayMessages.innerText = 'You are in the middle of a multi-capture. You must continue capturing.';
                     return;
                 }
 
-                // Si es un movimiento normal pero hay capturas obligatorias disponibles en el tablero, lo bloqueamos
-                if (visitedPositions.length === 0 && esMovimiento && compulsoryCaptureExists(playerTurn)) {
-                    displayMessages.innerText = 'Illegal move: You must capture if possible.';
-                    return;
-                }
+                // Se ELIMINA el bloqueo de captura obligatoria.
+                // En su lugar, la penalización es la regla del soplo: si el jugador mueve
+                // teniendo capturas disponibles, el rival podrá soplar una de sus piezas.
+                // (No hay if de compulsoryCaptureExists aquí.)
 
                 if (esMovimiento || esCaptura) {
+
+                    // Guardamos el origen real antes de modificar checkboxTicked,
+                    // necesario para filtrar luego qué piezas podían capturar.
+                    let originRow = checkboxTicked.row;
+                    let originCol = checkboxTicked.col;
+
+                    // Comprobar si ANTES del movimiento había alguna captura disponible.
+                    // Solo miramos al inicio de la cadena (visitedPositions vacío) para no
+                    // confundir con capturas ya realizadas en el mismo turno.
+                    let captureWasAvailable = compulsoryCaptureExists(playerTurn);
+                    let capturingPieces = [];
+                    if (captureWasAvailable && visitedPositions.length === 0) {
+                        capturingPieces = getCapturingPieces(playerTurn);
+                    }
+
+                    // [SOPLO] Al moverse, el jugador renuncia al soplo pendiente del turno actual
+                    huffCandidates = [];
+
                     // Mover la pieza
                     boardState[row][col] = playerTurn; 
                     boardState[checkboxTicked.row][checkboxTicked.col] = 0; //se deja vacía la casilla de origen
@@ -256,20 +308,20 @@ document.addEventListener('DOMContentLoaded', () => {
                         let medioC = checkboxTicked.col + (col - checkboxTicked.col) / 2;
                         boardState[medioR][medioC] = 0; //se elimina la ficha rival de la casilla intermedia
 
-                        //Memorizar el origen inicial y el nuevo destino en el historial del turno
+                        // [MULTI-CAPTURA] Memorizar el origen inicial y el nuevo destino en el historial del turno
                         if (visitedPositions.length === 0) {
                             visitedPositions.push({row: checkboxTicked.row, col: checkboxTicked.col});
                         }
                         visitedPositions.push({row: row, col: col});
 
-                        //comprobar si se puede seguir saltando desde la nueva posición (captura múltiple)
+                        // [MULTI-CAPTURA] comprobar si se puede seguir saltando desde la nueva posición
                         if (canCaptureAgain(row, col, playerTurn)) {
                             checkboxTicked = {row: row, col: col};
                             displayMessages.innerText = 'You can capture again! Select the next destination.';
                             drawBoard();
                             return; // No cambiar el turno aún
                         } else {
-                            visitedPositions = []; // Reiniciar historial de posiciones visitadas al finalizar la captura múltiple
+                            visitedPositions = []; // Reiniciar historial al finalizar la captura múltiple
                         }
                     }
   
@@ -279,8 +331,30 @@ document.addEventListener('DOMContentLoaded', () => {
                     //cambiar el turno al otro jugador (si era 1 pasa a 2 y viceversa)
                     playerTurn = playerTurn === 1 ? 2 : 1; 
 
-                    displayMessages.innerText = `Valid Movement. ${playerTurn} turn.`; 
+                    // [SOPLO] Preparar los candidatos a soplo para el SIGUIENTE jugador.
+                    // Dos casos:
+                    //  (a) Movió normalmente pero había captura disponible -> todas las capturadoras son soplables
+                    //  (b) Capturó con una pieza, pero otra distinta también podía capturar -> esa otra es soplable
+                    if (captureWasAvailable) {
+                        if (!esCaptura) {
+                            huffCandidates = capturingPieces;
+                        } else {
+                            let otherCapturers = capturingPieces.filter(p =>
+                                !(p.row === originRow && p.col === originCol)
+                            );
+                            if (otherCapturers.length > 0) {
+                                huffCandidates = otherCapturers;
+                            }
+                        }
+                    }
+
+                    if (huffCandidates.length > 0) {
+                        displayMessages.innerText = `Player ${playerTurn}, you may huff an opponent's piece that failed to capture. Click on it to remove it, or make your move.`;
+                    } else {
+                        displayMessages.innerText = `Valid Movement. ${playerTurn} turn.`;
+                    }
                     drawBoard(); 
+
                 } else {
                     displayMessages.innerText = 'Invalid movement (Check lines and rules).'; 
                 }
@@ -299,8 +373,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Cambiamos el turno al oponente
         playerTurn = playerTurn === 1 ? 2 : 1;
 
-        // Limpiamos cualquier seleccion a medias
+        // Limpiamos cualquier seleccion a medias y el estado de capturas/soplos
         checkboxTicked = null;
+        visitedPositions = []; // [MULTI-CAPTURA] evita basura si se salta a mitad de cadena
+        huffCandidates   = []; // [SOPLO]        renuncia a soplos pendientes
         interactionMode = 'select_piece';
 
         displayMessages.innerText = `You skipped your turn. It is now Player ${playerTurn}'s turn.`;
@@ -313,6 +389,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // El jugador se rinde y el mensaje indica que ha perdido
         displayMessages.innerText = "You gave up. The computer wins the match!";
+
+        // Limpiamos el estado de capturas/soplos antes de bloquear el tablero
+        visitedPositions = []; // [MULTI-CAPTURA]
+        huffCandidates   = []; // [SOPLO]
 
         // Cambiamos el estado para bloquear nuevos clics en el tablero
         interactionMode = 'game_over';
@@ -372,7 +452,7 @@ document.addEventListener('DOMContentLoaded', () => {
          * La coordenada intermedia sería [0 + 1, 0 + 1] = [1,1], que es la casilla que debe contener la ficha del rival para que el salto sea válido.
          */
 
-        /**comprueba si la casilla de origen y la casilla intermedia están unidas por un camino legal. */
+        //comprueba si la casilla de origen y la casilla intermedia están unidas por un camino legal. 
         if(!conectedPieces(originRow, originCol, originRow + pasR, originCol + pasC)) return false; // La pieza intermedia debe estar conectada 
 
         // La casilla intermedia debe tener una ficha del rival. 
@@ -414,13 +494,45 @@ document.addEventListener('DOMContentLoaded', () => {
         //no hay saltos obligatorios para el jugador activo
         return false;
     }
+
+    // Devuelve la lista de TODAS las piezas del jugador que actualmente podrían capturar.
+    // Se usa para preparar huffCandidates cuando el jugador mueve (o captura) sin ejercer una captura disponible.
+    function getCapturingPieces(player) {
+        let pieces = [];
+        let jumps = [ [-2, 0], [2, 0], [0, -2], [0, 2], [-2, -2], [-2, 2], [2, -2], [2, 2] ];
+
+        for (let r = 0; r < actualSize; r++) {
+            for (let c = 0; c < actualSize; c++) {
+                if (boardState[r][c] === player) {
+                    for (let s of jumps) {
+                        let destR = r + s[0];
+                        let destC = c + s[1];
+
+                        if (destR >= 0 && destR < actualSize && destC >= 0 && destC < actualSize) {
+                            if (boardState[destR][destC] === 0 && validateCapture(r, c, destR, destC, player)) {
+                                pieces.push({row: r, col: c});
+                                break; // Con una sola captura posible ya la incluimos en la lista
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return pieces;
+    }
     
     // APLICAR CONFIGURACIÓN.  
     btnApply.addEventListener('click', ()=> {
         actualSize = parseInt(selectSize.value); 
         generateDashboard(actualSize); 
-        checkboxTicked = null;
-        interactionMode = 'select_piece'; 
+
+        // Limpiamos todo el estado de interacción al reiniciar tablero
+        checkboxTicked   = null;
+        visitedPositions = []; // [MULTI-CAPTURA]
+        huffCandidates   = []; // [SOPLO]
+        interactionMode  = 'select_piece'; 
+
         // Corregido: uso de backticks
         displayMessages.innerText = `Board generated with dimensions ${actualSize}x${actualSize}. Let the game begin!`;
         drawBoard();  
@@ -429,7 +541,8 @@ document.addEventListener('DOMContentLoaded', () => {
     generateDashboard(actualSize); 
     drawBoard(); 
 
-    //Función detectora de saltos contiguos para captura múltiple. 
+    // Función detectora de saltos contiguos para captura múltiple. 
+    // Comprueba si desde (r,c) se puede seguir saltando (respetando casillas ya visitadas).
     function canCaptureAgain(r, c, player) {
         let jumps = [ [-2, 0], [2, 0], [0, -2], [0, 2], [-2, -2], [-2, 2], [2, -2], [2, 2] ];
         for(let s of jumps) { //recorre todas las direcciones posibles de salto
