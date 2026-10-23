@@ -2,12 +2,12 @@
 //Es decir, el código JS se ejecutará solo después de que todo el HTML haya sido procesado y renderizado por el navegador, evitando errores de referencia a elementos que aún no existen en el DOM.
 document.addEventListener('DOMContentLoaded', () => {
     // Referencia al contenedor principal del html
-    const containerTabelle = document.getElementById('tablero');
+    const contenedorTablero = document.getElementById('tablero');
 
     // Creamos el contenedor de la cuadricula
     const grid = document.createElement('div');
     grid.id = 'tablero-grid';
-    containerTabelle.appendChild(grid);
+    contenedorTablero.appendChild(grid);
 
     // Botones e Interfaz 
     const btnApply = document.getElementById('btn-apply-settings'); 
@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const dialogRatings = document.getElementById('ratings'); 
     const btnSeeRating = document.getElementById('btn-ratings'); 
-    const btnCloseRatings = document.getElementById('close-rankings'); 
+    const btnCloseRatings = document.getElementById('close-rankings'); //Asegúrate de que el HTML tenga id="close-rankings"
 
     // variables de estado: recordar en que situación está el juego y que jugador tiene el turno 
     let boardState = [];  //matriz donde 0 es vacio,1 es ficha roja y 2 es ficha azul
@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
     //DIBUJAR EL TABLERO DE MANERA DINÁMICA: se encarga de crear la estructura visual del tablero y las fichas según el estado actual del juego.
     //Traduce la matriz de numeros  en elementos visuales (divs y SVG) que representan las casillas y las fichas en el DOM.
     function drawBoard(){
-        containerTabelle.innerHTML = ''; // Limpiamos el contenedor completo
+        contenedorTablero.innerHTML = ''; // Limpiamos el contenedor completo
 
         // 1. Crear el contenedor CSS de las casillas (las intersecciones) adaptado al tamaño actual del tablero
         const grid = document.createElement('div');
@@ -151,8 +151,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // El SVG se coloca primero para que las líneas queden detrás de las casillas interactivas
         
         // Añadir el SVG y el Grid al DOM: 
-        containerTabelle.appendChild(svg);
-        containerTabelle.appendChild(grid);
+        contenedorTablero.appendChild(svg);
+        contenedorTablero.appendChild(grid);
 
         // 3. Dibujar las casillas interactivas y las fichas. 
         //recorrer la matriz boardState para crear cada casilla y colocar las fichas según el valor (0, 1 o 2)
@@ -233,7 +233,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 displayMessages.innerText = `You've selected your piece. Tap the destination.`; 
                 drawBoard(); 
             } else { //si el usuario clicó una casilla vacía o una ficha del rival, se le muestra un mensaje de error
-                displayMessages.innerText = 'You must select a piece of your color (Red).'; 
+                displayMessages.innerText = 'You must select a piece of your color.'; 
             }
 
         // ======================= MODO: seleccionar destino =======================
@@ -266,7 +266,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
 
-                // [MULTI-CAPTURA] A mitad de cadena no se permite un movimiento normal, solo capturar
+                //  A mitad de cadena no se permite un movimiento normal, solo capturar
                 if(visitedPositions.length > 0 && esMovimiento) {
                     displayMessages.innerText = 'You are in the middle of a multi-capture. You must continue capturing.';
                     return;
@@ -279,10 +279,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (esMovimiento || esCaptura) {
 
-                    // Guardamos el origen real antes de modificar checkboxTicked,
-                    // necesario para filtrar luego qué piezas podían capturar.
-                    let originRow = checkboxTicked.row;
-                    let originCol = checkboxTicked.col;
+                    
 
                     // Comprobar si ANTES del movimiento había alguna captura disponible.
                     // Solo miramos al inicio de la cadena (visitedPositions vacío) para no
@@ -293,7 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         capturingPieces = getCapturingPieces(playerTurn);
                     }
 
-                    // [SOPLO] Al moverse, el jugador renuncia al soplo pendiente del turno actual
+                    // Al moverse, el jugador renuncia al soplo pendiente del turno actual
                     huffCandidates = [];
 
                     // Mover la pieza
@@ -308,13 +305,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         let medioC = checkboxTicked.col + (col - checkboxTicked.col) / 2;
                         boardState[medioR][medioC] = 0; //se elimina la ficha rival de la casilla intermedia
 
-                        // [MULTI-CAPTURA] Memorizar el origen inicial y el nuevo destino en el historial del turno
+                        // Memorizar el origen inicial y el nuevo destino en el historial del turno
                         if (visitedPositions.length === 0) {
                             visitedPositions.push({row: checkboxTicked.row, col: checkboxTicked.col});
                         }
                         visitedPositions.push({row: row, col: col});
 
-                        // [MULTI-CAPTURA] comprobar si se puede seguir saltando desde la nueva posición
+                        //  comprobar si se puede seguir saltando desde la nueva posición
                         if (canCaptureAgain(row, col, playerTurn)) {
                             checkboxTicked = {row: row, col: col};
                             displayMessages.innerText = 'You can capture again! Select the next destination.';
@@ -331,23 +328,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     //cambiar el turno al otro jugador (si era 1 pasa a 2 y viceversa)
                     playerTurn = playerTurn === 1 ? 2 : 1; 
 
-                    // [SOPLO] Preparar los candidatos a soplo para el SIGUIENTE jugador.
-                    // Dos casos:
-                    //  (a) Movió normalmente pero había captura disponible -> todas las capturadoras son soplables
-                    //  (b) Capturó con una pieza, pero otra distinta también podía capturar -> esa otra es soplable
-                    if (captureWasAvailable) {
-                        if (!esCaptura) {
-                            huffCandidates = capturingPieces;
-                        } else {
-                            let otherCapturers = capturingPieces.filter(p =>
-                                !(p.row === originRow && p.col === originCol)
-                            );
-                            if (otherCapturers.length > 0) {
-                                huffCandidates = otherCapturers;
-                            }
-                        }
+                   // Solo hay soplo si el jugador NO capturó pero tenía capturas disponibles.
+                   // Si capturó (con la pieza que fuera), el turno queda "limpio" y no se soplona nada.
+                   if (captureWasAvailable && !esCaptura) {
+                    huffCandidates = capturingPieces;
                     }
-
                     if (huffCandidates.length > 0) {
                         displayMessages.innerText = `Player ${playerTurn}, you may huff an opponent's piece that failed to capture. Click on it to remove it, or make your move.`;
                     } else {
@@ -375,8 +360,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Limpiamos cualquier seleccion a medias y el estado de capturas/soplos
         checkboxTicked = null;
-        visitedPositions = []; // [MULTI-CAPTURA] evita basura si se salta a mitad de cadena
-        huffCandidates   = []; // [SOPLO]        renuncia a soplos pendientes
+        visitedPositions = []; //  evita basura si se salta a mitad de cadena
+        huffCandidates   = []; //        renuncia a soplos pendientes
         interactionMode = 'select_piece';
 
         displayMessages.innerText = `You skipped your turn. It is now Player ${playerTurn}'s turn.`;
@@ -391,8 +376,8 @@ document.addEventListener('DOMContentLoaded', () => {
         displayMessages.innerText = "You gave up. The computer wins the match!";
 
         // Limpiamos el estado de capturas/soplos antes de bloquear el tablero
-        visitedPositions = []; // [MULTI-CAPTURA]
-        huffCandidates   = []; // [SOPLO]
+        visitedPositions = []; // 
+        huffCandidates   = []; //
 
         // Cambiamos el estado para bloquear nuevos clics en el tablero
         interactionMode = 'game_over';
@@ -529,8 +514,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Limpiamos todo el estado de interacción al reiniciar tablero
         checkboxTicked   = null;
-        visitedPositions = []; // [MULTI-CAPTURA]
-        huffCandidates   = []; // [SOPLO]
+        visitedPositions = []; //
+        huffCandidates   = []; //
         interactionMode  = 'select_piece'; 
 
         // Corregido: uso de backticks
