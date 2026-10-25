@@ -13,6 +13,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnApply = document.getElementById('btn-apply-settings'); 
     const selectSize = document.getElementById('select-size'); 
     const displayMessages = document.querySelector('#mensajes p'); 
+    const selectTurn = document.getElementById('select-turn');
+    const selectIA = document.getElementById('select-ia');
+    const btnStart = document.getElementById('btn-start');
+    const btnDraw = document.getElementById('btn-draw');
+    const btnPass = document.getElementById('btn-pass');
+    const btnGiveUp = document.getElementById('btn-giveup');
 
     // Paneles superpuestos
     const dialogInstructions = document.getElementById('Instructions'); 
@@ -42,6 +48,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // (se llenan cuando el jugador anterior tenía captura disponible y no la hizo)
     let huffCandidates = []; 
 
+    // Nivel de IA y estadísticas para la tabla de clasificaciones
+    let iaLevel = 'easy';
+    let stats = {
+        3: { wins: 0, losses: 0 },
+        5: { wins: 0, losses: 0 }
+    };
+
     // EVENTOS DE LA INTERFAZ (abrir/cerrar paneles)
     btnSeeInstructions.addEventListener('click', () => dialogInstructions.showModal()); 
     btnCloseInstructions.addEventListener('click', () => dialogInstructions.close()); 
@@ -54,13 +67,13 @@ document.addEventListener('DOMContentLoaded', () => {
     function generateDashboard(size) {
         boardState = []; 
         const totalBoxes = size * size; // número total de casillas
-        const centralPosition = Math.floor(totalBoxes/2); //calcula la posición central del tablero (para dejarla vacía)
+        const centralPosition = Math.floor(totalBoxes / 2); //calcula la posición central del tablero (para dejarla vacía)
         let accountant = 0; // contador para recorrer todas las casillas del tablero
 
         //RECORRIDO DE FILAS Y COLUMNAS PARA CREAR LA MATRIZ DEL TABLERO.
-        for(let row=0; row<size; row++) {
+        for(let row = 0; row < size; row++) {
             let actualRow = []; 
-            for(let col = 0; col<size; col++) {
+            for(let col = 0; col < size; col++) {
                 if(accountant < centralPosition) { //lo que este antes de la posición central se llena con fichas rojas
                     actualRow.push(1); // ficha roja
 
@@ -77,7 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } 
 
     //DIBUJAR EL TABLERO DE MANERA DINÁMICA: se encarga de crear la estructura visual del tablero y las fichas según el estado actual del juego.
-    //Traduce la matriz de numeros  en elementos visuales (divs y SVG) que representan las casillas y las fichas en el DOM.
+    //Traduce la matriz de numeros en elementos visuales (divs y SVG) que representan las casillas y las fichas en el DOM.
     function drawBoard(){
         contenedorTablero.innerHTML = ''; // Limpiamos el contenedor completo
 
@@ -146,40 +159,26 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        //el SVG con las lineas dibujadas y el contenedor CSS de las casillas solo existen en la memoria RAM del ordenador. 
-        //Al usar appendChild se inyenctan fisicamente en la etiquete <main id="tablero"> del HTML y se muestran en la pantalla del usuario.
-        // El SVG se coloca primero para que las líneas queden detrás de las casillas interactivas
-        
         // Añadir el SVG y el Grid al DOM: 
         contenedorTablero.appendChild(svg);
         contenedorTablero.appendChild(grid);
 
         // 3. Dibujar las casillas interactivas y las fichas. 
-        //recorrer la matriz boardState para crear cada casilla y colocar las fichas según el valor (0, 1 o 2)
         for(let row = 0; row < actualSize; row++){
             for(let col = 0; col < actualSize; col++) { 
-                //1. crear la casilla (div) y asignarle la clase CSS 'box' para que tenga el estilo adecuado
                 const box = document.createElement('div'); 
-                box.classList.add('box'); //60 px de ancho y alto, borde redondeado, cursor pointer, etc.
-                //esta caja actua como un botón que el usuario puede clicar para seleccionar una ficha o un destino.
+                box.classList.add('box'); 
 
-                //leer el numero guardado en boardState para saber si hay ficha roja, azul o casilla vacía
                 const value = boardState[row][col]; 
 
                 if(value === 1) {
-                    //1. crear un div para la ficha 
                     const piece = document.createElement('div'); 
-                    //2. asignarle la clase CSS 'red-piece' para que tenga el estilo adecuado (color rojo, borde redondeado, etc.)
                     piece.classList.add('red-piece'); 
-                    //3. meter la ficha dentro de la casilla (box) para que se muestre en el tablero
                     box.appendChild(piece);
 
                 } else if(value === 2) {
-                    //1. crear un div para la ficha
                     const piece = document.createElement('div');
-                    //2. asignarle la clase CSS 'blue-piece' para que tenga el estilo adecuado (color azul, borde redondeado, etc.)
                     piece.classList.add('blue-piece');
-                    //3. meter la ficha dentro de la casilla (box) para que se muestre en el tablero
                     box.appendChild(piece);
                 }
 
@@ -189,16 +188,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     box.classList.add('huffable');
                 }
 
-                //comprober si la caja q está dibujando en ese momento es la misma que el usuario ha clicado para seleccionar una ficha (checkboxTicked). Si es así, se le aplica un estilo especial para que se vea resaltada.
                 if(checkboxTicked && checkboxTicked.row === row && checkboxTicked.col === col){
-                   //si coinciden se aplica un estilo especial a la casilla para que se vea resaltada (fondo amarillo semitransparente y borde redondeado)
                     box.style.backgroundColor = 'rgba(255,255,0,0.5)'; 
-                    box.style.borderRadius = '50%'; // Resaltado circular para adaptarse a la intersección
+                    box.style.borderRadius = '50%'; 
                 }
-                //cuando el usuario hace click en una casilla, se llama a la función handleClickBox con la fila, columna y valor de esa casilla.
+
                 box.addEventListener('click', () => handleClickBox(row, col, value)); 
-                
-                //se coloca la casilla (box) dentro del contenedor CSS (grid) para que se muestre en el tablero
                 grid.appendChild(box); 
             }
         }
@@ -207,38 +202,36 @@ document.addEventListener('DOMContentLoaded', () => {
     //Máquina de estados para manejar la interacción del usuario con el tablero.
     // Fusionada: incluye la lógica de la regla del soplo y la de captura múltiple.
     function handleClickBox(row, col, value) {
+        if (playerTurn === 2 || interactionMode === 'game_over') return;
 
         // ======================= MODO: seleccionar pieza =======================
-        if(interactionMode === 'select_piece') { //el juego espera que el usuario seleccione una ficha propia para moverla
+        if(interactionMode === 'select_piece') { 
 
-            //  Antes de cualquier otra cosa, comprobar si el jugador quiere ejercer el soplo.
-            // Solo es válido si hay candidatos pendientes y el clic cae sobre una pieza del rival.
+            // Antes de cualquier otra cosa, comprobar si el jugador quiere ejercer el soplo.
             if (huffCandidates.length > 0 && value === (playerTurn === 1 ? 2 : 1)) {
                 let isHuffable = huffCandidates.some(p => p.row === row && p.col === col);
                 if (isHuffable) {
-                    // Eliminamos la pieza del oponente del tablero definitivamente
                     boardState[row][col] = 0;
-                    // Solo se puede soplar una pieza: el resto de candidatos se descartan
                     huffCandidates = [];
                     displayMessages.innerText = `You huffed an opponent's piece! Now make your move.`;
                     drawBoard();
-                    return; // Seguimos en select_piece para que el jugador realice su movimiento
+                    checkGameOver();
+                    return; 
                 }
             }
 
             // Solo puedes seleccionar tus propias fichas
-            if(value === playerTurn) { //comprobar si la ficha clicada pertenece al jugador activo (1 para rojo, 2 para azul)
+            if(value === playerTurn) { 
                 checkboxTicked = {row: row, col: col}; 
-                interactionMode = 'select_destination'; //cambiar el modo de interacción para que el juego espere que el usuario seleccione un destino válido para mover la ficha previamente seleccionada
+                interactionMode = 'select_destination'; 
                 displayMessages.innerText = `You've selected your piece. Tap the destination.`; 
                 drawBoard(); 
-            } else { //si el usuario clicó una casilla vacía o una ficha del rival, se le muestra un mensaje de error
+            } else { 
                 displayMessages.innerText = 'You must select a piece of your color.'; 
             }
 
         // ======================= MODO: seleccionar destino =======================
         } else if(interactionMode === 'select_destination') {
-            //si el usuario clicó la misma casilla que ya había seleccionado para mover la ficha, se cancela la selección y se vuelve al modo de seleccionar pieza. 
             if(row === checkboxTicked.row && col === checkboxTicked.col) {
 
                 // No permitir cancelar si hay una cadena de capturas en curso
@@ -248,16 +241,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 checkboxTicked = null; 
-                interactionMode = 'select_piece';  //volver al modo de seleccionar pieza
+                interactionMode = 'select_piece';  
                 displayMessages.innerText = `Selection canceled.`; 
                 drawBoard(); 
 
-            } else if(value === 0) { //comprobar si la casilla clicada está vacía (0) para intentar mover la ficha seleccionada a esa posición
+            } else if(value === 0) { 
                 
                 let esMovimiento = validateNormalMovement(checkboxTicked.row, checkboxTicked.col, row, col, playerTurn);
-                //guarda true si es un paso asyacente legal
                 let esCaptura = validateCapture(checkboxTicked.row, checkboxTicked.col, row, col, playerTurn);
-                //guarda true si es un salto legal sobre un enemigo (captura)
 
                 // Comprobar si la casilla de destino ya fue visitada en esta cadena
                 let visited = visitedPositions.some(pos => pos.row === row && pos.col === col); 
@@ -266,24 +257,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
 
-                //  A mitad de cadena no se permite un movimiento normal, solo capturar
+                // A mitad de cadena no se permite un movimiento normal, solo capturar
                 if(visitedPositions.length > 0 && esMovimiento) {
                     displayMessages.innerText = 'You are in the middle of a multi-capture. You must continue capturing.';
                     return;
                 }
 
-                // Se ELIMINA el bloqueo de captura obligatoria.
-                // En su lugar, la penalización es la regla del soplo: si el jugador mueve
-                // teniendo capturas disponibles, el rival podrá soplar una de sus piezas.
-                // (No hay if de compulsoryCaptureExists aquí.)
-
                 if (esMovimiento || esCaptura) {
 
-                    
-
                     // Comprobar si ANTES del movimiento había alguna captura disponible.
-                    // Solo miramos al inicio de la cadena (visitedPositions vacío) para no
-                    // confundir con capturas ya realizadas en el mismo turno.
                     let captureWasAvailable = compulsoryCaptureExists(playerTurn);
                     let capturingPieces = [];
                     if (captureWasAvailable && visitedPositions.length === 0) {
@@ -295,15 +277,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     // Mover la pieza
                     boardState[row][col] = playerTurn; 
-                    boardState[checkboxTicked.row][checkboxTicked.col] = 0; //se deja vacía la casilla de origen
+                    boardState[checkboxTicked.row][checkboxTicked.col] = 0; 
                     
                     // Si fue captura, eliminar la pieza comida del tablero
                     if (esCaptura) {
-                        //se calcula donde estaba exactamente la ficha rival. Se resta la coordenada de destino menos 
-                        //la de origen y se divide entre 2 para encontrar la casilla intermedia que contiene la ficha rival.
                         let medioR = checkboxTicked.row + (row - checkboxTicked.row) / 2;
                         let medioC = checkboxTicked.col + (col - checkboxTicked.col) / 2;
-                        boardState[medioR][medioC] = 0; //se elimina la ficha rival de la casilla intermedia
+                        boardState[medioR][medioC] = 0; 
 
                         // Memorizar el origen inicial y el nuevo destino en el historial del turno
                         if (visitedPositions.length === 0) {
@@ -311,7 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                         visitedPositions.push({row: row, col: col});
 
-                        //  comprobar si se puede seguir saltando desde la nueva posición
+                        // Comprobar si se puede seguir saltando desde la nueva posición
                         if (canCaptureAgain(row, col, playerTurn)) {
                             checkboxTicked = {row: row, col: col};
                             displayMessages.innerText = 'You can capture again! Select the next destination.';
@@ -322,23 +302,29 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     }
   
-                    checkboxTicked = null;  //se borra la selección de la ficha para que el usuario pueda seleccionar otra en su próximo turno
-                    interactionMode = 'select_piece'; //volver al modo de seleccionar pieza para el próximo turno
+                    checkboxTicked = null;  
+                    interactionMode = 'select_piece'; 
 
-                    //cambiar el turno al otro jugador (si era 1 pasa a 2 y viceversa)
+                    // Cambiar el turno al otro jugador
                     playerTurn = playerTurn === 1 ? 2 : 1; 
 
-                   // Solo hay soplo si el jugador NO capturó pero tenía capturas disponibles.
-                   // Si capturó (con la pieza que fuera), el turno queda "limpio" y no se soplona nada.
-                   if (captureWasAvailable && !esCaptura) {
-                    huffCandidates = capturingPieces;
+                    // Solo hay soplo si el jugador NO capturó pero tenía capturas disponibles.
+                    if (captureWasAvailable && !esCaptura) {
+                        huffCandidates = capturingPieces.map(p => 
+                            (p.row === row && p.col === col) ? p : 
+                            (boardState[p.row][p.col] === 0 ? {row: row, col: col} : p)
+                        );
                     }
-                    if (huffCandidates.length > 0) {
-                        displayMessages.innerText = `Player ${playerTurn}, you may huff an opponent's piece that failed to capture. Click on it to remove it, or make your move.`;
-                    } else {
-                        displayMessages.innerText = `Valid Movement. ${playerTurn} turn.`;
-                    }
+
                     drawBoard(); 
+
+                    // Comprobar si la partida ha terminado; si no, lanzar turno del ordenador
+                    if (!checkGameOver()) {
+                        displayMessages.innerText = `Valid movement. Computer's turn (Blue)...`;
+                        if (playerTurn === 2) {
+                            setTimeout(computerTurn, 600);
+                        }
+                    } 
 
                 } else {
                     displayMessages.innerText = 'Invalid movement (Check lines and rules).'; 
@@ -347,40 +333,59 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Referencias a los botones
-    const btnPass = document.getElementById('btn-pass');
-    const btnGiveUp = document.getElementById('btn-giveup');
-
     // Skip turn
     btnPass.addEventListener('click', () => {
-        if (interactionMode === 'game_over') return;
+        if (interactionMode === 'game_over' || playerTurn === 2) return;
 
         // Cambiamos el turno al oponente
-        playerTurn = playerTurn === 1 ? 2 : 1;
+        playerTurn = 2;
 
         // Limpiamos cualquier seleccion a medias y el estado de capturas/soplos
         checkboxTicked = null;
-        visitedPositions = []; //  evita basura si se salta a mitad de cadena
-        huffCandidates   = []; //        renuncia a soplos pendientes
+        visitedPositions = []; // evita basura si se salta a mitad de cadena
+        huffCandidates   = []; // renuncia a soplos pendientes
         interactionMode = 'select_piece';
 
-        displayMessages.innerText = `You skipped your turn. It is now Player ${playerTurn}'s turn.`;
+        displayMessages.innerText = `You skipped your turn. It is now Computer's turn.`;
         drawBoard();
+
+        if (!checkGameOver()) {
+            setTimeout(computerTurn, 600);
+        }
     });
 
     // Give up
     btnGiveUp.addEventListener('click', () => {
         if (interactionMode === 'game_over') return;
 
+        // Sumar derrota en la tabla de clasificaciones para el tamaño actual
+        stats[actualSize].losses++;
+        updateRatings();
+
         // El jugador se rinde y el mensaje indica que ha perdido
         displayMessages.innerText = "You gave up. The computer wins the match!";
 
         // Limpiamos el estado de capturas/soplos antes de bloquear el tablero
-        visitedPositions = []; // 
-        huffCandidates   = []; //
+        checkboxTicked   = null;
+        visitedPositions = [];
+        huffCandidates   = [];
 
         // Cambiamos el estado para bloquear nuevos clics en el tablero
         interactionMode = 'game_over';
+        drawBoard();
+    });
+
+    // Propose a draw (Empate por mutuo acuerdo)
+    btnDraw.addEventListener('click', () => {
+        if (interactionMode === 'game_over') return;
+
+        checkboxTicked   = null;
+        visitedPositions = [];
+        huffCandidates   = [];
+        interactionMode  = 'game_over';
+
+        displayMessages.innerText = "Match ended in a draw by mutual agreement!";
+        drawBoard();
     });
 
     function conectedPieces(r1, c1, r2, c2){
@@ -398,21 +403,13 @@ document.addEventListener('DOMContentLoaded', () => {
             return false; 
         }
 
-        /**Para las piezas rojas (que empiezan arriba y bajan): Su última fila (la línea de fondo donde ya no pueden avanzar más hacia adelante) 
-         * es la fila de más abajo del tablero. En código, esto se representa como actualSize - 1 
-         * (es decir, la fila 4 en un tablero de 5x5).
-         * Para las piezas azules (que empiezan abajo y suben): Su última fila es la de más arriba del tablero. 
-         * En código, esto es la fila 0.
-         */
         let advanceR = destRow - originRow;
         if(player === 1){
             if(advanceR < 0) return false; // Rojas no retroceden
-            // CORREGIDO: Usar originRow en vez de advanceR
             if(originRow === actualSize - 1 && advanceR !== 0) return false;
         } else {
-            if(advanceR > 0) return false; // Azules no pueden avanzar hacia arriba
+            if(advanceR > 0) return false; // Azules no pueden avanzar hacia abajo
             if(originRow === 0 && advanceR !== 0) return false; 
-            //Si la ficha está en la fila de arriba del todo, no puede moverse verticalmente.
         }
         return true; 
     }
@@ -421,53 +418,31 @@ document.addEventListener('DOMContentLoaded', () => {
         let dr = destRow - originRow; // Diferencia de filas totales del salto
         let dc = destCol - originCol; // Diferencia de columnas totales del salto
 
-        // El salto debe ser de exactamente 2 posiciones (en cualquier dirección)
-        //si la diferencia es 2 en una dirección, debe ser 0 en la otra para ser un salto válido. 
         if ((Math.abs(dr) !== 2 && dr !== 0) || (Math.abs(dc) !== 2 && dc !== 0)) return false;
-        if (Math.abs(dr) === 2 && Math.abs(dc) === 1) return false; //no se permiten saltos en diagonal de 2x1
-        if (Math.abs(dr) === 1 && Math.abs(dc) === 2) return false; //no se permiten saltos en diagonal de 1x2
+        if (Math.abs(dr) === 2 && Math.abs(dc) === 1) return false; 
+        if (Math.abs(dr) === 1 && Math.abs(dc) === 2) return false; 
 
-        //dr y dc valdrán 2, -2 o 0. Al dividir estos valores entre 2, obtenemosa dirección de un solo paso (1, -1 o 0) para ubicar la casilla intermedia.
-        //el operador === 0 ? 0 : asegura que si no hay movimiento en una dirección, el paso intermedio también sea 0, evitando errores de cálculo.
         let pasR = dr === 0 ? 0 : dr / 2; // fila intermedia
         let pasC = dc === 0 ? 0 : dc / 2; // columna intermedia
 
-        /**Si a fiche roja esta en la posición [0,0] y se quiere saltar a [2,2]
-         * dr es 2 (2-0) y dc es 2 (2-0). Al dividir ambos entre 2, obtenemos pasR = 1 y pasC = 1.
-         * La coordenada intermedia sería [0 + 1, 0 + 1] = [1,1], que es la casilla que debe contener la ficha del rival para que el salto sea válido.
-         */
+        if(!conectedPieces(originRow, originCol, originRow + pasR, originCol + pasC)) return false; 
 
-        //comprueba si la casilla de origen y la casilla intermedia están unidas por un camino legal. 
-        if(!conectedPieces(originRow, originCol, originRow + pasR, originCol + pasC)) return false; // La pieza intermedia debe estar conectada 
-
-        // La casilla intermedia debe tener una ficha del rival. 
-        //si el jugador activo es el 1, el rival debe ser el 2 (y viceversa).
         let rival = player === 1 ? 2 : 1;
         if(boardState[originRow + pasR][originCol + pasC] !== rival) return false;
-        /**revisa qué número hay guardado en boardState[1][1]. Si encuentra un 0 (casilla vacía) o un 1 
-         * (una ficha de tu propio equipo), devuelve false porque el movimiento es ilegal. 
-         * Solo devolverá true si en esa matriz encuentra el 2 correspondiente a la ficha azul del adversario. */
         
         return true;
     }
 
     function compulsoryCaptureExists(player){
-        //diferencias de coordenadas para los posibles saltos (2 casillas en cualquier dirección). 
-        let jumps = [ [-2, 0], [2, 0], [0, -2], [0, 2], [-2, -2], [-2, 2], [2, -2], [2, 2] ]; // todas las direcciones posibles de salto
+        let jumps = [ [-2, 0], [2, 0], [0, -2], [0, 2], [-2, -2], [-2, 2], [2, -2], [2, 2] ]; 
         
-        //Recorre la matriz que forma el tablero
         for(let r = 0; r < actualSize; r++){
             for(let c = 0; c < actualSize; c++){
-                //si es tu turno el algoritmo ignora las casillas vacías y las del rival, y solo se fija en tus fichas.
-                //el algoritmo comprueba si hay un salto obligatorio para el jugador activo.
                 if(boardState[r][c] === player){
-                    //por cada ficha tuya encontrada proyecta los 8 saltos sumando la coordenada actual a los valores del array jumps, obteniendo el destino hipotético. 
                     for(let s of jumps) {
                         let destR = r + s[0];
                         let destC = c + s[1];
-                        //comprobar que el aterrizaje hipotetico del salto esta dentro de los limites del tablero
                         if(destR >= 0 && destR < actualSize && destC >= 0 && destC < actualSize){
-                             //si el destino está dentro del tablero, comprueba si la casilla de destino está vacía y si el salto es legal (captura obligatoria).
                             if(boardState[destR][destC] === 0 && validateCapture(r, c, destR, destC, player)){
                                 return true; // Existe un salto obligatorio
                             }
@@ -476,12 +451,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         }
-        //no hay saltos obligatorios para el jugador activo
         return false;
     }
 
     // Devuelve la lista de TODAS las piezas del jugador que actualmente podrían capturar.
-    // Se usa para preparar huffCandidates cuando el jugador mueve (o captura) sin ejercer una captura disponible.
     function getCapturingPieces(player) {
         let pieces = [];
         let jumps = [ [-2, 0], [2, 0], [0, -2], [0, 2], [-2, -2], [-2, 2], [2, -2], [2, 2] ];
@@ -496,7 +469,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (destR >= 0 && destR < actualSize && destC >= 0 && destC < actualSize) {
                             if (boardState[destR][destC] === 0 && validateCapture(r, c, destR, destC, player)) {
                                 pieces.push({row: r, col: c});
-                                break; // Con una sola captura posible ya la incluimos en la lista
+                                break; 
                             }
                         }
                     }
@@ -506,40 +479,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         return pieces;
     }
-    
-    // APLICAR CONFIGURACIÓN.  
-    btnApply.addEventListener('click', ()=> {
-        actualSize = parseInt(selectSize.value); 
-        generateDashboard(actualSize); 
-
-        // Limpiamos todo el estado de interacción al reiniciar tablero
-        checkboxTicked   = null;
-        visitedPositions = []; //
-        huffCandidates   = []; //
-        interactionMode  = 'select_piece'; 
-
-        // Corregido: uso de backticks
-        displayMessages.innerText = `Board generated with dimensions ${actualSize}x${actualSize}. Let the game begin!`;
-        drawBoard();  
-    }); 
-
-    generateDashboard(actualSize); 
-    drawBoard(); 
 
     // Función detectora de saltos contiguos para captura múltiple. 
-    // Comprueba si desde (r,c) se puede seguir saltando (respetando casillas ya visitadas).
     function canCaptureAgain(r, c, player) {
         let jumps = [ [-2, 0], [2, 0], [0, -2], [0, 2], [-2, -2], [-2, 2], [2, -2], [2, 2] ];
-        for(let s of jumps) { //recorre todas las direcciones posibles de salto
-            let destR = r + s[0]; //calcula la fila de destino sumando la fila actual más el salto proyectado
-            let destC = c + s[1]; //calcula la columna de destino sumando la columna actual más el salto proyectado
+        for(let s of jumps) { 
+            let destR = r + s[0]; 
+            let destC = c + s[1]; 
 
-            //si el destino proyectado está dentro de los límites del tablero, comprueba: 
-            //  -  si la casilla de destino está vacía, 
-            //  -  si no ha sido visitada en este turno 
-            //  -  si el salto es legal (captura obligatoria).
             if(destR >= 0 && destR < actualSize && destC >= 0 && destC < actualSize){
-                let visited = visitedPositions.some(pos => pos.row === destR && pos.col === destC); // comprueba si la posición de destino ha sido visitada
+                let visited = visitedPositions.some(pos => pos.row === destR && pos.col === destC); 
                 if(boardState[destR][destC] === 0 && !visited && validateCapture(r, c, destR, destC, player)){
                     return true; // Existe un salto contiguo
                 }
@@ -548,5 +497,263 @@ document.addEventListener('DOMContentLoaded', () => {
         return false;
     }
 
+    // =========================================================
+    // APARTADO B: DETECCIÓN DE FIN DE PARTIDA Y CLASIFICACIONES
+    // =========================================================
 
+    function hasValidMoves(player) {
+        if (compulsoryCaptureExists(player)) {
+            return true;
+        }
+
+        const directions = [
+            [-1, 0], [1, 0], [0, -1], [0, 1],
+            [-1, -1], [-1, 1], [1, -1], [1, 1]
+        ];
+
+        for (let r = 0; r < actualSize; r++) {
+            for (let c = 0; c < actualSize; c++) {
+                if (boardState[r][c] === player) {
+                    for (let d of directions) {
+                        let destR = r + d[0];
+                        let destC = c + d[1];
+                        if (destR >= 0 && destR < actualSize && destC >= 0 && destC < actualSize) {
+                            if (boardState[destR][destC] === 0 && validateNormalMovement(r, c, destR, destC, player)) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    function updateRatings() {
+        document.getElementById('wins-3').innerText = stats[3].wins;
+        document.getElementById('losses-3').innerText = stats[3].losses;
+        document.getElementById('wins-5').innerText = stats[5].wins;
+        document.getElementById('losses-5').innerText = stats[5].losses;
+    }
+
+    function checkGameOver() {
+        if (!hasValidMoves(playerTurn)) {
+            interactionMode = 'game_over';
+            visitedPositions = [];
+            huffCandidates = [];
+            if (playerTurn === 2) {
+                stats[actualSize].wins++;
+                displayMessages.innerText = "Congratulations! You won the match!";
+            } else {
+                stats[actualSize].losses++;
+                displayMessages.innerText = "Game Over! You have no valid moves left. Computer wins!";
+            }
+            updateRatings();
+            drawBoard();
+            return true;
+        }
+        return false;
+    }
+
+    // =========================================================
+    // APARTADO A: INTELIGENCIA ARTIFICIAL (ORDENADOR)
+    // =========================================================
+
+    function computerTurn() {
+        if (interactionMode === 'game_over' || playerTurn !== 2) return;
+
+        // 1. Regla del soplo: si el humano dejó fichas que debían capturar, el ordenador sopla una
+        if (huffCandidates.length > 0) {
+            let pieceToHuff = huffCandidates[0];
+            boardState[pieceToHuff.row][pieceToHuff.col] = 0;
+            huffCandidates = [];
+            displayMessages.innerText = "Computer huffed one of your pieces for not capturing!";
+            drawBoard();
+            if (checkGameOver()) return;
+        }
+
+        // 2. Recopilar todas las jugadas válidas del ordenador (fichas azules = 2)
+        let possibleCaptures = [];
+        let possibleMoves = [];
+
+        const jumpDirs = [ [-2, 0], [2, 0], [0, -2], [0, 2], [-2, -2], [-2, 2], [2, -2], [2, 2] ];
+        const moveDirs = [ [-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [-1, 1], [1, -1], [1, 1] ];
+
+        for (let r = 0; r < actualSize; r++) {
+            for (let c = 0; c < actualSize; c++) {
+                if (boardState[r][c] === 2) {
+                    // Capturas disponibles
+                    for (let j of jumpDirs) {
+                        let destR = r + j[0];
+                        let destC = c + j[1];
+                        if (destR >= 0 && destR < actualSize && destC >= 0 && destC < actualSize) {
+                            if (boardState[destR][destC] === 0 && validateCapture(r, c, destR, destC, 2)) {
+                                possibleCaptures.push({
+                                    type: 'capture',
+                                    fromR: r, fromC: c,
+                                    toR: destR, toC: destC
+                                });
+                            }
+                        }
+                    }
+                    // Movimientos normales disponibles
+                    for (let m of moveDirs) {
+                        let destR = r + m[0];
+                        let destC = c + m[1];
+                        if (destR >= 0 && destR < actualSize && destC >= 0 && destC < actualSize) {
+                            if (boardState[destR][destC] === 0 && validateNormalMovement(r, c, destR, destC, 2)) {
+                                possibleMoves.push({
+                                    type: 'move',
+                                    fromR: r, fromC: c,
+                                    toR: destR, toC: destC
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Guardamos qué piezas azules podían capturar por si en modo 'easy' no captura
+        let blueCapturingPieces = getCapturingPieces(2);
+
+        // 3. Elegir jugada según iaLevel ('easy' vs 'difficult')
+        let chosenAction = null;
+
+        if (iaLevel === 'difficult') {
+            if (possibleCaptures.length > 0) {
+                chosenAction = possibleCaptures[Math.floor(Math.random() * possibleCaptures.length)];
+            } else if (possibleMoves.length > 0) {
+                chosenAction = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+            }
+        } else {
+            // Modo 'easy': elige al azar entre todas las jugadas posibles
+            let allActions = possibleCaptures.concat(possibleMoves);
+            if (allActions.length > 0) {
+                chosenAction = allActions[Math.floor(Math.random() * allActions.length)];
+            }
+        }
+
+        if (!chosenAction) {
+            checkGameOver();
+            return;
+        }
+
+        // 4. Ejecutar movimiento o captura
+        boardState[chosenAction.toR][chosenAction.toC] = 2;
+        boardState[chosenAction.fromR][chosenAction.fromC] = 0;
+
+        if (chosenAction.type === 'capture') {
+            let midR = chosenAction.fromR + (chosenAction.toR - chosenAction.fromR) / 2;
+            let midC = chosenAction.fromC + (chosenAction.toC - chosenAction.fromC) / 2;
+            boardState[midR][midC] = 0;
+
+            visitedPositions = [
+                { row: chosenAction.fromR, col: chosenAction.fromC },
+                { row: chosenAction.toR, col: chosenAction.toC }
+            ];
+
+            drawBoard();
+
+            // Si puede encadenar otra captura múltiple, continúa tras 600ms
+            if (canCaptureAgain(chosenAction.toR, chosenAction.toC, 2)) {
+                displayMessages.innerText = "Computer captured a piece and continues jumping...";
+                setTimeout(() => continueComputerCapture(chosenAction.toR, chosenAction.toC), 600);
+                return;
+            } else {
+                visitedPositions = [];
+            }
+        } else if (blueCapturingPieces.length > 0) {
+            // Si el ordenador hizo un movimiento normal pero tenía captura disponible (modo easy),
+            // sus piezas infractoras quedan marcadas en huffCandidates para que el humano pueda soplarlas
+            huffCandidates = blueCapturingPieces.map(p =>
+                (p.row === chosenAction.fromR && p.col === chosenAction.fromC)
+                    ? { row: chosenAction.toR, col: chosenAction.toC }
+                    : p
+            );
+        }
+
+        // 5. Devolver el turno al jugador humano (1)
+        playerTurn = 1;
+        drawBoard();
+        if (!checkGameOver()) {
+            if (huffCandidates.length > 0) {
+                displayMessages.innerText = "Your turn (Red)! Computer missed a capture: click its highlighted piece to huff it, or make your move.";
+            } else {
+                displayMessages.innerText = "Computer moved. Your turn (Red)!";
+            }
+        }
+    }
+
+    function continueComputerCapture(r, c) {
+        if (interactionMode === 'game_over') return;
+
+        const jumpDirs = [ [-2, 0], [2, 0], [0, -2], [0, 2], [-2, -2], [-2, 2], [2, -2], [2, 2] ];
+        let nextCaptures = [];
+
+        for (let j of jumpDirs) {
+            let destR = r + j[0];
+            let destC = c + j[1];
+            if (destR >= 0 && destR < actualSize && destC >= 0 && destC < actualSize) {
+                let visited = visitedPositions.some(pos => pos.row === destR && pos.col === destC);
+                if (boardState[destR][destC] === 0 && !visited && validateCapture(r, c, destR, destC, 2)) {
+                    nextCaptures.push({ toR: destR, toC: destC });
+                }
+            }
+        }
+
+        if (nextCaptures.length > 0) {
+            let chosen = nextCaptures[Math.floor(Math.random() * nextCaptures.length)];
+            boardState[chosen.toR][chosen.toC] = 2;
+            boardState[r][c] = 0;
+
+            let midR = r + (chosen.toR - r) / 2;
+            let midC = c + (chosen.toC - c) / 2;
+            boardState[midR][midC] = 0;
+
+            visitedPositions.push({ row: chosen.toR, col: chosen.toC });
+            drawBoard();
+
+            if (canCaptureAgain(chosen.toR, chosen.toC, 2)) {
+                setTimeout(() => continueComputerCapture(chosen.toR, chosen.toC), 600);
+                return;
+            }
+        }
+
+        visitedPositions = [];
+        playerTurn = 1;
+        drawBoard();
+        if (!checkGameOver()) {
+            displayMessages.innerText = "Computer finished capturing. Your turn (Red)!";
+        }
+    }
+
+    // INICIAR / APLICAR CONFIGURACIÓN DE PARTIDA
+    function startNewGame() {
+        actualSize = parseInt(selectSize.value); 
+        iaLevel = selectIA.value;
+        playerTurn = selectTurn.value === 'red' ? 1 : 2;
+
+        generateDashboard(actualSize); 
+
+        // Limpiamos todo el estado de interacción al reiniciar tablero
+        checkboxTicked   = null;
+        visitedPositions = [];
+        huffCandidates   = [];
+        interactionMode  = 'select_piece'; 
+
+        drawBoard();  
+
+        if (playerTurn === 2) {
+            displayMessages.innerText = `Board generated (${actualSize}x${actualSize}). Computer starts (Blue)...`;
+            setTimeout(computerTurn, 600);
+        } else {
+            displayMessages.innerText = `Board generated with dimensions ${actualSize}x${actualSize}. Your turn (Red)!`;
+        }
+    }
+
+    btnApply.addEventListener('click', startNewGame);
+    btnStart.addEventListener('click', startNewGame);
+
+    startNewGame(); 
 });
