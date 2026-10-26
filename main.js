@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const dialogRatings = document.getElementById('ratings'); 
     const btnSeeRating = document.getElementById('btn-ratings'); 
-    const btnCloseRatings = document.getElementById('close-rankings'); //Asegúrate de que el HTML tenga id="close-rankings"
+    const btnCloseRatings = document.getElementById('close-rankings'); 
 
     // variables de estado: recordar en que situación está el juego y que jugador tiene el turno 
     let boardState = [];  //matriz donde 0 es vacio,1 es ficha roja y 2 es ficha azul
@@ -49,7 +49,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let huffCandidates = []; 
 
     // Nivel de IA y estadísticas para la tabla de clasificaciones
-    let iaLevel = 'easy';
+    let iaLevel = 'easy'; //predeterminado para esta entrega
+    //el nivel de ia se podra cambiar a difficult en futuras versiones del juego.
     let stats = {
         3: { wins: 0, losses: 0 },
         5: { wins: 0, losses: 0 }
@@ -92,7 +93,10 @@ document.addEventListener('DOMContentLoaded', () => {
     //DIBUJAR EL TABLERO DE MANERA DINÁMICA: se encarga de crear la estructura visual del tablero y las fichas según el estado actual del juego.
     //Traduce la matriz de numeros en elementos visuales (divs y SVG) que representan las casillas y las fichas en el DOM.
     function drawBoard(){
-        contenedorTablero.innerHTML = ''; // Limpiamos el contenedor completo
+        const oldGrid = document.getElementById('tablero-grid');
+        const oldSvg = document.getElementById('tablero-lineas');
+        if(oldGrid) oldGrid.remove(); // Eliminamos la cuadricula anterior
+        if(oldSvg) oldSvg.remove(); // Eliminamos el SVG anterior
 
         // 1. Crear el contenedor CSS de las casillas (las intersecciones) adaptado al tamaño actual del tablero
         const grid = document.createElement('div');
@@ -200,19 +204,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     //Máquina de estados para manejar la interacción del usuario con el tablero.
-    // Fusionada: incluye la lógica de la regla del soplo y la de captura múltiple.
+    // Regla del soplo + captura múltiple
     function handleClickBox(row, col, value) {
+        //comprobar si el juego ha terminado o si es el turno del jugador 2 (ordenador).
         if (playerTurn === 2 || interactionMode === 'game_over') return;
 
-        // ======================= MODO: seleccionar pieza =======================
+        // Modo seleccionar pieza
         if(interactionMode === 'select_piece') { 
 
             // Antes de cualquier otra cosa, comprobar si el jugador quiere ejercer el soplo.
             if (huffCandidates.length > 0 && value === (playerTurn === 1 ? 2 : 1)) {
+                // Comprobar si la pieza clicada es una de las que pueden ser sopladas
                 let isHuffable = huffCandidates.some(p => p.row === row && p.col === col);
+                //si es una pieza soplable, se elimina del tablero y se limpia la lista de soplos pendientes.
                 if (isHuffable) {
-                    boardState[row][col] = 0;
-                    huffCandidates = [];
+                    boardState[row][col] = 0; //eliminar la pieza del tablero
+                    huffCandidates = []; // Limpiar la lista de piezas infractoras después del soplo
                     displayMessages.innerText = `You huffed an opponent's piece! Now make your move.`;
                     drawBoard();
                     checkGameOver();
@@ -222,7 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Solo puedes seleccionar tus propias fichas
             if(value === playerTurn) { 
-                checkboxTicked = {row: row, col: col}; 
+                checkboxTicked = {row: row, col: col}; // Guardar la posición de la pieza seleccionada
                 interactionMode = 'select_destination'; 
                 displayMessages.innerText = `You've selected your piece. Tap the destination.`; 
                 drawBoard(); 
@@ -230,8 +237,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 displayMessages.innerText = 'You must select a piece of your color.'; 
             }
 
-        // ======================= MODO: seleccionar destino =======================
+         //Seleccionar destino de la pieza previamente seleccionada
         } else if(interactionMode === 'select_destination') {
+            //si el jugador hace click en la misma pieza que ya había seleccionado, se cancela la selección y vuelve al modo de seleccionar pieza.
             if(row === checkboxTicked.row && col === checkboxTicked.col) {
 
                 // No permitir cancelar si hay una cadena de capturas en curso
@@ -240,18 +248,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     return; 
                 }
 
-                checkboxTicked = null; 
-                interactionMode = 'select_piece';  
-                displayMessages.innerText = `Selection canceled.`; 
+                checkboxTicked = null; // Deseleccionar la pieza
+                interactionMode = 'select_piece';  // Volver al modo de seleccionar pieza
+                displayMessages.innerText = `Selection canceled.`;
                 drawBoard(); 
 
-            } else if(value === 0) { 
+            } else if(value === 0) { //si el jugador hace click en una casilla vacía: 
                 
                 let esMovimiento = validateNormalMovement(checkboxTicked.row, checkboxTicked.col, row, col, playerTurn);
                 let esCaptura = validateCapture(checkboxTicked.row, checkboxTicked.col, row, col, playerTurn);
 
                 // Comprobar si la casilla de destino ya fue visitada en esta cadena
                 let visited = visitedPositions.some(pos => pos.row === row && pos.col === col); 
+                //si es una captura múltiple, no se puede aterrizar en una casilla previamente visitada: 
                 if(esCaptura && visited) {
                     displayMessages.innerText = 'You cannot land on a previously visited square during a multi-capture.';
                     return;
@@ -263,13 +272,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
 
+                // Si el movimiento es válido (ya sea normal o captura), se ejecuta la jugada
                 if (esMovimiento || esCaptura) {
 
                     // Comprobar si ANTES del movimiento había alguna captura disponible.
                     let captureWasAvailable = compulsoryCaptureExists(playerTurn);
                     let capturingPieces = [];
+                    //si habia capturas disponibles y el jugador no las hizo, se guardan las piezas infractoras para que puedan ser sopladas en el siguiente turno.
                     if (captureWasAvailable && visitedPositions.length === 0) {
-                        capturingPieces = getCapturingPieces(playerTurn);
+                        capturingPieces = getCapturingPieces(playerTurn); // Guardar las piezas que podían capturar antes del movimiento
                     }
 
                     // Al moverse, el jugador renuncia al soplo pendiente del turno actual
@@ -277,6 +288,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     // Mover la pieza
                     boardState[row][col] = playerTurn; 
+
+                    // Vaciar la casilla de origen
                     boardState[checkboxTicked.row][checkboxTicked.col] = 0; 
                     
                     // Si fue captura, eliminar la pieza comida del tablero
@@ -298,7 +311,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             drawBoard();
                             return; // No cambiar el turno aún
                         } else {
-                            visitedPositions = []; // Reiniciar historial al finalizar la captura múltiple
+                            visitedPositions = []; // Reiniciar historial de casillas visitadas al finalizar la captura múltiple
                         }
                     }
   
@@ -497,10 +510,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return false;
     }
 
-    // =========================================================
-    // APARTADO B: DETECCIÓN DE FIN DE PARTIDA Y CLASIFICACIONES
-    // =========================================================
-
+    // Función para verificar si el jugador actual tiene movimientos válidos disponibles
     function hasValidMoves(player) {
         if (compulsoryCaptureExists(player)) {
             return true;
@@ -529,6 +539,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return false;
     }
 
+    // Función para actualizar la tabla de clasificaciones en el panel de estadísticas
     function updateRatings() {
         document.getElementById('wins-3').innerText = stats[3].wins;
         document.getElementById('losses-3').innerText = stats[3].losses;
@@ -536,6 +547,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('losses-5').innerText = stats[5].losses;
     }
 
+    // Función para comprobar si el juego ha terminado y actualizar el estado del juego y las estadísticas
     function checkGameOver() {
         if (!hasValidMoves(playerTurn)) {
             interactionMode = 'game_over';
@@ -555,21 +567,19 @@ document.addEventListener('DOMContentLoaded', () => {
         return false;
     }
 
-    // =========================================================
-    // APARTADO A: INTELIGENCIA ARTIFICIAL (ORDENADOR)
-    // =========================================================
-
+    //función para gestionar el turno del ordenador. 
     function computerTurn() {
+        //verificar que el juego no haya terminado y que sea el turno del ordenador (2)
         if (interactionMode === 'game_over' || playerTurn !== 2) return;
 
-        // 1. Regla del soplo: si el humano dejó fichas que debían capturar, el ordenador sopla una
+        //Regla del soplo: si el jugador anterior tenía captura disponible y no la hizo, el ordenador sopla una de sus piezas.
         if (huffCandidates.length > 0) {
-            let pieceToHuff = huffCandidates[0];
-            boardState[pieceToHuff.row][pieceToHuff.col] = 0;
-            huffCandidates = [];
+            let pieceToHuff = huffCandidates[0]; // Elegimos la primera pieza infractora para soplar
+            boardState[pieceToHuff.row][pieceToHuff.col] = 0; // Eliminamos la pieza del tablero
+            huffCandidates = []; // Limpiamos la lista de piezas infractoras después del soplo
             displayMessages.innerText = "Computer huffed one of your pieces for not capturing!";
-            drawBoard();
-            if (checkGameOver()) return;
+            drawBoard(); //dibujar el tablero actualizado después del soplo
+            if (checkGameOver()) return; // Comprobar si el soplo terminó la partida
         }
 
         // 2. Recopilar todas las jugadas válidas del ordenador (fichas azules = 2)
@@ -617,7 +627,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Guardamos qué piezas azules podían capturar por si en modo 'easy' no captura
         let blueCapturingPieces = getCapturingPieces(2);
 
-        // 3. Elegir jugada según iaLevel ('easy' vs 'difficult')
+        // Elegir jugada según iaLevel ('easy' vs 'difficult')
         let chosenAction = null;
 
         if (iaLevel === 'difficult') {
@@ -639,7 +649,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // 4. Ejecutar movimiento o captura
+        //Ejecutar movimiento o captura
         boardState[chosenAction.toR][chosenAction.toC] = 2;
         boardState[chosenAction.fromR][chosenAction.fromC] = 0;
 
@@ -673,7 +683,7 @@ document.addEventListener('DOMContentLoaded', () => {
             );
         }
 
-        // 5. Devolver el turno al jugador humano (1)
+        // Devolver el turno al jugador 1
         playerTurn = 1;
         drawBoard();
         if (!checkGameOver()) {
@@ -685,44 +695,54 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    //Función recursiva para encadenar capturas múltiples del ordenador en un turno.
+    //Se llama a sí misma si tras una captura el ordenador puede seguir capturando desde la nueva posición.
     function continueComputerCapture(r, c) {
         if (interactionMode === 'game_over') return;
 
+        //direcciones de salto posibles para capturas
         const jumpDirs = [ [-2, 0], [2, 0], [0, -2], [0, 2], [-2, -2], [-2, 2], [2, -2], [2, 2] ];
         let nextCaptures = [];
 
+        // Comprobar todas las direcciones de salto desde la posición actual del ordenador
         for (let j of jumpDirs) {
-            let destR = r + j[0];
-            let destC = c + j[1];
+            let destR = r + j[0]; // fila destino
+            let destC = c + j[1]; // columna destino
+            //si la casilla destino esta dentro de los limites del tablero: 
             if (destR >= 0 && destR < actualSize && destC >= 0 && destC < actualSize) {
+                //se comprueba si la casilla destino ya fue visitada en esta cadena de capturas múltiples
                 let visited = visitedPositions.some(pos => pos.row === destR && pos.col === destC);
+                //si la casilla destino es vacía, no ha sido visitada y es un salto válido, se añade a la lista de capturas posibles
                 if (boardState[destR][destC] === 0 && !visited && validateCapture(r, c, destR, destC, 2)) {
-                    nextCaptures.push({ toR: destR, toC: destC });
+                    nextCaptures.push({ toR: destR, toC: destC }); // Añadir a las capturas posibles
                 }
             }
         }
 
+        //si la lista de capturas posibles no está vacía se elige una al azar y se ejecuta la captura, actualizando el tablero y el historial de posiciones visitadas.
         if (nextCaptures.length > 0) {
-            let chosen = nextCaptures[Math.floor(Math.random() * nextCaptures.length)];
-            boardState[chosen.toR][chosen.toC] = 2;
-            boardState[r][c] = 0;
+            let chosen = nextCaptures[Math.floor(Math.random() * nextCaptures.length)]; //elegir captura al azar
+            boardState[chosen.toR][chosen.toC] = 2; // colocar la ficha azul en la casilla destino
+            boardState[r][c] = 0; // vaciar la casilla de origen
 
-            let midR = r + (chosen.toR - r) / 2;
-            let midC = c + (chosen.toC - c) / 2;
-            boardState[midR][midC] = 0;
+            let midR = r + (chosen.toR - r) / 2; // fila intermedia (la de pieza capturada)
+            let midC = c + (chosen.toC - c) / 2; // columna intermedia (la de pieza capturada)
+            boardState[midR][midC] = 0; //eliminar la pieza capturada del tablero
 
-            visitedPositions.push({ row: chosen.toR, col: chosen.toC });
+            visitedPositions.push({ row: chosen.toR, col: chosen.toC }); //añadir a historial de posiciones visitadas la nueva casilla destino
             drawBoard();
 
+            //validar si desde la nueva posición se puede seguir capturando, en cuyo caso se llama a sí misma tras 600ms para continuar la cadena de capturas.
             if (canCaptureAgain(chosen.toR, chosen.toC, 2)) {
-                setTimeout(() => continueComputerCapture(chosen.toR, chosen.toC), 600);
+                setTimeout(() => continueComputerCapture(chosen.toR, chosen.toC), 1200);
                 return;
             }
         }
 
-        visitedPositions = [];
-        playerTurn = 1;
+        visitedPositions = []; // Reiniciar historial de posiciones visitadas al finalizar la cadena de capturas
+        playerTurn = 1; //cambiar el turno al jugador 1 
         drawBoard();
+        // Comprobar si la partida ha terminado; si no, mostrar mensaje de turno del siguiente jugador
         if (!checkGameOver()) {
             displayMessages.innerText = "Computer finished capturing. Your turn (Red)!";
         }
