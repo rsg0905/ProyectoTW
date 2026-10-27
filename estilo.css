@@ -2,6 +2,118 @@ html {
   font-size: 100%;            
 }
 
+.site-header {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  background-color: #f8fafc;
+  width: fit-content;
+  margin: 0 auto;
+  border-radius: 8px;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    text-decoration: none;
+    border-bottom: none;
+}
+
+.logo-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.logo-icon {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    grid-template-columns: repeat(2, 15px);
+    grid-template-rows: repeat(2, 15px);
+    gap: 14px;
+    align-content: center;
+    justify-content: center;
+    position: relative;
+
+    /* Líneas horizontales y verticales */
+    background:
+        /* Horizontales */
+        linear-gradient(black, black)
+            center 7.5px / 100% 2px no-repeat,
+        linear-gradient(black, black)
+            center 36.5px / 100% 2px no-repeat,
+
+        /* Verticales */
+        linear-gradient(black, black)
+            7.5px center / 2px 100% no-repeat,
+        linear-gradient(black, black)
+            36.5px center / 2px 100% no-repeat;
+}
+
+/* Diagonal de arriba izquierda a abajo derecha */
+.logo-icon::before {
+    content: "";
+    position: absolute;
+    width: 41px;
+    height: 2px;
+    background: black;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(45deg);
+    z-index: 0;
+}
+
+/* Diagonal de arriba derecha a abajo izquierda */
+.logo-icon::after {
+    content: "";
+    position: absolute;
+    width: 41px;
+    height: 2px;
+    background: black;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-45deg);
+    z-index: 0;
+}
+
+.piece {
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    position: relative;
+    z-index: 1;
+}
+
+.piece.blue {
+    background-color: #2563eb;
+}
+
+.piece.red {
+    background-color: #ef4444;
+}
+
+
+.logo-text {
+  font-family: Arial, sans-serif;
+  font-size: 35px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  line-height: 1.1;
+  color: #172554;
+}
+
+.logo-subtitle {
+  font-family: Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: #64748b;
+  margin-top: 5px;
+}
+
+
 body {
  
   background-color: #e0f0f5;    
@@ -179,4 +291,22 @@ hr {
 .huffable .blue-piece {
     border: 3px solid #ffcc00;
     box-shadow: 0 0 10px #ffcc00;
+}
+
+#rankings-table {
+  width: 100%;
+  text-align: center;
+  border-collapse: collapse;
+  margin-top: 1rem; 
+}
+
+#rankings-table th, 
+#rankings-table td {
+  border: 1px solid #145f8c;
+  padding: 8px; 
+}
+
+#rankings-table th {
+  background-color: #e8f4f8; 
+  color: #0b3d5c;
 }

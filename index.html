@@ -11,9 +11,23 @@
 
 <body>
     <!--Logotipo-->
-    <header id="logotype">
-        <h1>Alquerque Web</h1>
+    <header class="site-header">
+        <a href="#" class="logo">
+            <span class="logo-icon" aria-hidden="true">
+                <span class="piece blue"></span>
+                <span class="piece red"></span>
+                <span class="piece red"></span>
+                <span class="piece blue"></span>
+            </span>
+
+            <span class="logo-content">
+                <span class="logo-text">ALQUERQUE</span>
+                <span class="logo-subtitle">THINK · MOVE · WIN.</span>
+            </span>
+        </a>
     </header>
+
+
 
     <!-- Identificación-->
     <section id="identification">
@@ -69,10 +83,9 @@
         <!-- Aquí se mostrarán los mensajes del juego -->
 
     <!-- Tablero de juego-->
+     <h2>Game Board</h2>
     <main id="tablero">
-        <h2>Game Board</h2>
-        <!-- se generara aqui el tablero con JavaScript-->
-        <!-- El JS inyectará aquí el #tablero-grid -->
+        <!-- El tablero se generará dinámicamente mediante JavaScript -->
     </main>
 
     <!-- Instrucciones (panel superpuesto oculto por defecto)-->
@@ -92,7 +105,7 @@
     <dialog id="ratings">
         <h2>Rankings</h2>
         <p>Your local match statistics against the computer:</p>
-        <table border="1" style="width: 100%; text-align: center; border-collapse: collapse;">
+        <table id="rankings-table">
             <thead>
             <tr>
                 <th>Board Size</th>
@@ -117,7 +130,10 @@
         <button id="close-rankings">Close</button>
     </dialog>
 
-<script src="main.js"></script> <!-- Enlazamos el js -->
-
+    <!-- Scripts -->
+    <script src="Board.js"></script>
+    <script src="IA.js"></script>
+    <script src="Game.js"></script>
+    <script src="main.js"></script> 
 </body>
 </html>
