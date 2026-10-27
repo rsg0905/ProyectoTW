@@ -180,3 +180,21 @@ hr {
     border: 3px solid #ffcc00;
     box-shadow: 0 0 10px #ffcc00;
 }
+
+#rankings-table {
+  width: 100%;
+  text-align: center;
+  border-collapse: collapse;
+  margin-top: 1rem; 
+}
+
+#rankings-table th, 
+#rankings-table td {
+  border: 1px solid #145f8c;
+  padding: 8px; 
+}
+
+#rankings-table th {
+  background-color: #e8f4f8; 
+  color: #0b3d5c;
+}
