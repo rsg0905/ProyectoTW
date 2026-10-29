@@ -6,6 +6,9 @@ class Game {
         this.visitedPositions = []; // For chain captures
         this.huffCandidates = []; // Pieces that can be huffed
 
+        this.gameOverModal = document.getElementById('game-over-modal');
+        this.gameOverMessage = document.getElementById('game-over-message');
+
         this.statistics = { 3: {wins: 0, losses: 0}, 5: {wins: 0, losses: 0} }; // Estadísticas 
 
         this.displayMessages = document.querySelector('#mensajes p');
@@ -26,8 +29,13 @@ class Game {
         this.board.generateDashboard(); 
         this.refreshScreen(); 
 
-        if(this.turn === 2) {
-            this.iaPlay();
+        // Retraso visual para el primer turno de la IA ===
+        if (this.turn === 2) {
+            this.displayMessages.innerText = `Board generated. Computer starts (Blue)...`;
+            // Espera 800 milisegundos antes de que el ordenador mueva
+            setTimeout(() => this.iaPlay(), 800);
+        } else {
+            this.displayMessages.innerText = `Board generated. Your turn (Red)!`;
         }
     }
 
@@ -297,6 +305,60 @@ class Game {
         }
     }
 
+    // CONTROLES DE PARTIDA
+    skipTurn() { //saltar turno
+        if (this.interactionMode === 'game_over' || this.turn === 2) return;
+        
+        this.selectedBox = null;
+        this.visitedPositions = [];
+        this.huffCandidates = []; // Renunciar a los soplos pendientes
+        this.interactionMode = 'select_piece';
+        this.turn = 2; // Ceder el turno
+
+        this.displayMessages.innerText = "You skipped your turn. Computer's turn (Blue)...";
+        this.refreshScreen();
+
+        if (!this.checkGameOver()) {
+            setTimeout(() => this.iaPlay(), 600);
+        }
+    }
+
+    giveUp() {
+        if (this.interactionMode === 'game_over') return;
+        
+        this.interactionMode = 'game_over';
+        this.selectedBox = null;
+        this.visitedPositions = [];
+        this.huffCandidates = [];
+        
+        this.statistics[this.board.size].losses++;
+        document.getElementById(`losses-${this.board.size}`).innerText = this.statistics[this.board.size].losses;
+
+        let msg = "You gave up. The computer wins the match!";
+        this.displayMessages.innerText = msg;
+        this.gameOverMessage.innerText = msg; // Inyecta el texto en el panel
+        this.gameOverModal.showModal(); // Abre el panel desplegable
+        
+        this.refreshScreen();
+    }
+
+    proposeDraw() {
+        if (this.interactionMode === 'game_over') return;
+        
+        this.interactionMode = 'game_over';
+        this.selectedBox = null;
+        this.visitedPositions = [];
+        this.huffCandidates = [];
+
+        let msg = "Match ended in a draw by mutual agreement!";
+        this.displayMessages.innerText = msg;
+        this.gameOverMessage.innerText = msg;
+        this.gameOverModal.showModal();
+        
+        this.refreshScreen();
+    }
+
+
     hasValidMoves(player) {
         if (this.board.compulsoryCaptureExists(player)) {
             return true;
@@ -331,17 +393,21 @@ class Game {
             this.visitedPositions = [];
             this.huffCandidates = [];
             
+            let msg = "";
             if (this.turn === 2) {
                 this.statistics[this.board.size].wins++;
-                this.displayMessages.innerText = "Congratulations! You won the match!";
+                msg = "Congratulations! You won the match!";
             } else {
                 this.statistics[this.board.size].losses++;
-                this.displayMessages.innerText = "Game Over! You have no valid moves left. Computer wins!";
+                msg = "Game Over! You have no valid moves left. Computer wins!";
             }
             
-            // Actualizar tabla HTML
             document.getElementById(`wins-${this.board.size}`).innerText = this.statistics[this.board.size].wins;
             document.getElementById(`losses-${this.board.size}`).innerText = this.statistics[this.board.size].losses;
+            
+            this.displayMessages.innerText = msg;
+            this.gameOverMessage.innerText = msg;
+            this.gameOverModal.showModal(); // Despliega la ventana de fin de juego
             
             this.refreshScreen();
             return true;
