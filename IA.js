@@ -4,8 +4,9 @@ class IA {
     }
 
     calculateMove(board, huffCandidates) {
+        //MODO DIFICIL: si hay capturas disponibles, se priorizan sobre los movimientos normales
         //Regla del soplo: si el jugador anterior tenia una captura disponible y no la hizo, se sopla una de sus piezas
-        if(huffCandidates.length > 0) {
+        if(this.level === 'difficult' && huffCandidates.length > 0) {
             let pieceToHuff = huffCandidates[0];
             return {
                 type: 'huff', 

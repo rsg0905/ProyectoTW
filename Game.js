@@ -6,6 +6,9 @@ class Game {
         this.visitedPositions = []; // For chain captures
         this.huffCandidates = []; // Pieces that can be huffed
 
+        this.gameOverModal = document.getElementById('game-over-modal');
+        this.gameOverMessage = document.getElementById('game-over-message');
+
         this.statistics = { 3: {wins: 0, losses: 0}, 5: {wins: 0, losses: 0} }; // Estadísticas 
 
         this.displayMessages = document.querySelector('#mensajes p');
@@ -26,8 +29,13 @@ class Game {
         this.board.generateDashboard(); 
         this.refreshScreen(); 
 
-        if(this.turn === 2) {
-            this.iaPlay();
+        // Retraso visual para el primer turno de la IA ===
+        if (this.turn === 2) {
+            this.displayMessages.innerText = `Board generated. Computer starts (Blue)...`;
+            // Espera 800 milisegundos antes de que el ordenador mueva
+            setTimeout(() => this.iaPlay(), 800);
+        } else {
+            this.displayMessages.innerText = `Board generated. Your turn (Red)!`;
         }
     }
 
@@ -55,6 +63,21 @@ class Game {
     handleClickBox(row, col, value) {
         //comprobar si el juego ha terminado o si es el turno del jugador 2 (ordenador).
         if (this.turn === 2 || this.interactionMode === 'game_over') return;
+
+        //Regla del soplo: si el jugador anterior tenía una captura disponible y no la hizo se da la oportunidad de soplar una de sus piezas.
+        if (this.huffCandidates.length > 0 && value === 2) {
+            let isHuffable = this.huffCandidates.some(p => p.row === row && p.col === col);
+            if (isHuffable) {
+                this.board.state[row][col] = 0; 
+                this.huffCandidates = []; 
+                this.selectedBox = null; // Resetea la selección de la pieza
+                this.interactionMode = 'select_piece';
+                this.displayMessages.innerText = `You huffed an opponent's piece! Now make your move.`;
+                this.refreshScreen();
+                this.checkGameOver();
+                return; 
+            }
+        }
 
         // Modo seleccionar pieza
         if(this.interactionMode === 'select_piece') {
@@ -240,6 +263,16 @@ class Game {
             return;
         }
 
+        // Antes de mover, el juego comprueba si la IA está ignorando una captura
+        let captureWasAvailable = this.board.compulsoryCaptureExists(2);
+        let capturingPieces = [];
+        if (captureWasAvailable) {
+            capturingPieces = this.board.getCapturingPieces(2);
+        }
+
+        // Al mover, la IA renuncia al soplo pendiente que pudiera tener sobre ti en este turno
+        this.huffCandidates = [];
+
         // Ejecutar jugada física en el tablero
         this.board.state[jugada.toR][jugada.toC] = 2;
         this.board.state[jugada.fromR][jugada.fromC] = 0;
@@ -252,12 +285,79 @@ class Game {
             this.visitedPositions = [];
         }
 
+        // Si la IA podía capturar pero hizo un movimiento normal cede el derecho a soplarla
+        if (captureWasAvailable && jugada.type !== 'capture') {
+            this.huffCandidates = capturingPieces.map(p => 
+                (p.row === jugada.fromR && p.col === jugada.fromC) ? {row: jugada.toR, col: jugada.toC} : p
+            );
+        }
+
         this.turn = 1;
         this.refreshScreen();
+        
         if (!this.checkGameOver()) {
-            this.displayMessages.innerText = "Computer moved. Your turn (Red)!";
+            // Aviso en pantalla si la IA ha dejado una pieza vulnerable
+            if (this.huffCandidates.length > 0) {
+                this.displayMessages.innerText = "Computer missed a capture! Click its highlighted piece to huff it.";
+            } else {
+                this.displayMessages.innerText = "Computer moved. Your turn (Red)!";
+            }
         }
     }
+
+    // CONTROLES DE PARTIDA
+    skipTurn() { //saltar turno
+        if (this.interactionMode === 'game_over' || this.turn === 2) return;
+        
+        this.selectedBox = null;
+        this.visitedPositions = [];
+        this.huffCandidates = []; // Renunciar a los soplos pendientes
+        this.interactionMode = 'select_piece';
+        this.turn = 2; // Ceder el turno
+
+        this.displayMessages.innerText = "You skipped your turn. Computer's turn (Blue)...";
+        this.refreshScreen();
+
+        if (!this.checkGameOver()) {
+            setTimeout(() => this.iaPlay(), 600);
+        }
+    }
+
+    giveUp() {
+        if (this.interactionMode === 'game_over') return;
+        
+        this.interactionMode = 'game_over';
+        this.selectedBox = null;
+        this.visitedPositions = [];
+        this.huffCandidates = [];
+        
+        this.statistics[this.board.size].losses++;
+        document.getElementById(`losses-${this.board.size}`).innerText = this.statistics[this.board.size].losses;
+
+        let msg = "You gave up. The computer wins the match!";
+        this.displayMessages.innerText = msg;
+        this.gameOverMessage.innerText = msg; // Inyecta el texto en el panel
+        this.gameOverModal.showModal(); // Abre el panel desplegable
+        
+        this.refreshScreen();
+    }
+
+    proposeDraw() {
+        if (this.interactionMode === 'game_over') return;
+        
+        this.interactionMode = 'game_over';
+        this.selectedBox = null;
+        this.visitedPositions = [];
+        this.huffCandidates = [];
+
+        let msg = "Match ended in a draw by mutual agreement!";
+        this.displayMessages.innerText = msg;
+        this.gameOverMessage.innerText = msg;
+        this.gameOverModal.showModal();
+        
+        this.refreshScreen();
+    }
+
 
     hasValidMoves(player) {
         if (this.board.compulsoryCaptureExists(player)) {
@@ -293,17 +393,21 @@ class Game {
             this.visitedPositions = [];
             this.huffCandidates = [];
             
+            let msg = "";
             if (this.turn === 2) {
                 this.statistics[this.board.size].wins++;
-                this.displayMessages.innerText = "Congratulations! You won the match!";
+                msg = "Congratulations! You won the match!";
             } else {
                 this.statistics[this.board.size].losses++;
-                this.displayMessages.innerText = "Game Over! You have no valid moves left. Computer wins!";
+                msg = "Game Over! You have no valid moves left. Computer wins!";
             }
             
-            // Actualizar tabla HTML
             document.getElementById(`wins-${this.board.size}`).innerText = this.statistics[this.board.size].wins;
             document.getElementById(`losses-${this.board.size}`).innerText = this.statistics[this.board.size].losses;
+            
+            this.displayMessages.innerText = msg;
+            this.gameOverMessage.innerText = msg;
+            this.gameOverModal.showModal(); // Despliega la ventana de fin de juego
             
             this.refreshScreen();
             return true;
