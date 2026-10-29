@@ -14,6 +14,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-instructions').onclick = () => dialogInstructions.showModal();
     document.getElementById('close-instructions').onclick = () => dialogInstructions.close();
 
+    const dialogRatings = document.getElementById('ratings'); 
+    document.getElementById('btn-ratings').onclick = () => dialogRatings.showModal();
+    document.getElementById('close-rankings').onclick = () => dialogRatings.close();
+
     // 3. Arrancar partida al pulsar los botones
     function Start() {
         let size = parseInt(selectSize.value);

@@ -56,6 +56,21 @@ class Game {
         //comprobar si el juego ha terminado o si es el turno del jugador 2 (ordenador).
         if (this.turn === 2 || this.interactionMode === 'game_over') return;
 
+        //Regla del soplo: si el jugador anterior tenía una captura disponible y no la hizo se da la oportunidad de soplar una de sus piezas.
+        if (this.huffCandidates.length > 0 && value === 2) {
+            let isHuffable = this.huffCandidates.some(p => p.row === row && p.col === col);
+            if (isHuffable) {
+                this.board.state[row][col] = 0; 
+                this.huffCandidates = []; 
+                this.selectedBox = null; // Resetea la selección de la pieza
+                this.interactionMode = 'select_piece';
+                this.displayMessages.innerText = `You huffed an opponent's piece! Now make your move.`;
+                this.refreshScreen();
+                this.checkGameOver();
+                return; 
+            }
+        }
+
         // Modo seleccionar pieza
         if(this.interactionMode === 'select_piece') {
 
@@ -240,6 +255,16 @@ class Game {
             return;
         }
 
+        // Antes de mover, el juego comprueba si la IA está ignorando una captura
+        let captureWasAvailable = this.board.compulsoryCaptureExists(2);
+        let capturingPieces = [];
+        if (captureWasAvailable) {
+            capturingPieces = this.board.getCapturingPieces(2);
+        }
+
+        // Al mover, la IA renuncia al soplo pendiente que pudiera tener sobre ti en este turno
+        this.huffCandidates = [];
+
         // Ejecutar jugada física en el tablero
         this.board.state[jugada.toR][jugada.toC] = 2;
         this.board.state[jugada.fromR][jugada.fromC] = 0;
@@ -252,10 +277,23 @@ class Game {
             this.visitedPositions = [];
         }
 
+        // Si la IA podía capturar pero hizo un movimiento normal cede el derecho a soplarla
+        if (captureWasAvailable && jugada.type !== 'capture') {
+            this.huffCandidates = capturingPieces.map(p => 
+                (p.row === jugada.fromR && p.col === jugada.fromC) ? {row: jugada.toR, col: jugada.toC} : p
+            );
+        }
+
         this.turn = 1;
         this.refreshScreen();
+        
         if (!this.checkGameOver()) {
-            this.displayMessages.innerText = "Computer moved. Your turn (Red)!";
+            // Aviso en pantalla si la IA ha dejado una pieza vulnerable
+            if (this.huffCandidates.length > 0) {
+                this.displayMessages.innerText = "Computer missed a capture! Click its highlighted piece to huff it.";
+            } else {
+                this.displayMessages.innerText = "Computer moved. Your turn (Red)!";
+            }
         }
     }
 
