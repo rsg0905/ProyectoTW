@@ -74,6 +74,8 @@ class IA {
         return chosenAction; //devuelve null si no hay jugadas posibles
     }
 
+    // Devuelve una captura aleatoria posible desde (r, c) sin pisar casillas
+    // ya visitadas en este turno, o null si la cadena ha terminado.
     searchNextCapture(board, r, c, visitedPositions) {
         const jumpDirs = [ [-2, 0], [2, 0], [0, -2], [0, 2], [-2, -2], [-2, 2], [2, -2], [2, 2] ];
         let nextCaptures = [];
@@ -87,7 +89,7 @@ class IA {
 
                 if (board.state[destR][destC] === 0 && !visited && board.validateCapture(r, c, destR, destC, 2)) {
                     nextCaptures.push({
-                        type: 'chain-capture',
+                        type: 'capture',
                         fromR: r, fromC: c,
                         toR: destR, toC: destC 
                     }); 

@@ -1,7 +1,8 @@
 class Board {
+    //tamaño y referencia al contenedor HTML donde se dibuja el tablero
     constructor(size, containerHTML) {
         this.size = size;
-        this.state = []; 
+        this.state = []; //estado del tablero, representado como una matriz bidimensional (array de arrays)
         this.containerHTML = containerHTML; 
     }
 
@@ -14,7 +15,7 @@ class Board {
 
         //RECORRIDO DE FILAS Y COLUMNAS PARA CREAR LA MATRIZ DEL TABLERO.
         for(let row = 0; row < this.size; row++) {
-            let actualRow = []; 
+            let actualRow = []; //array temporal para almacenar el estado de la fila actual 
             for(let col = 0; col < this.size; col++) {
                 if(accountant < centralPosition) { //lo que este antes de la posición central se llena con fichas rojas
                     actualRow.push(1); // ficha roja
@@ -33,24 +34,25 @@ class Board {
 
 
     //DIBUJAR EL TABLERO DE MANERA DINÁMICA: se encarga de crear la estructura visual del tablero y las fichas según el estado actual del juego.
-    //recibe los datos visuales desde la clase juego. 
+    //recibe los datos visuales desde la clase juego: checkboxTicked (casilla seleccionada) y huffCandidates (fichas que pueden ser sopladas)
     drawBoard(checkboxTicked, huffCandidates){
-        const oldGrid = document.getElementById('tablero-grid');
-        const oldSvg = document.getElementById('tablero-lineas');
+        const oldGrid = document.getElementById('tablero-grid'); // Referencia al contenedor CSS de las casillas (intersecciones)
+        const oldSvg = document.getElementById('tablero-lineas'); // Referencia al SVG que dibuja las líneas (vectores que conectan las casillas)
         if(oldGrid) oldGrid.remove(); // Eliminamos la cuadricula anterior
         if(oldSvg) oldSvg.remove(); // Eliminamos el SVG anterior
 
         // 1. Crear el contenedor CSS de las casillas (las intersecciones) adaptado al tamaño actual del tablero
-        const grid = document.createElement('div');
-        grid.id = 'tablero-grid';
-        grid.style.gridTemplateColumns = `repeat(${this.size}, 60px)`; 
-        grid.style.gridTemplateRows = `repeat(${this.size}, 60px)`; 
+        //cada celda tiene un tamaño fijo de 60px
+        const grid = document.createElement('div'); // Contenedor CSS para las casillas
+        grid.id = 'tablero-grid'; // Identificador del contenedor
+        grid.style.gridTemplateColumns = `repeat(${this.size}, 60px)`; // Definimos el número de columnas y su tamaño fijo
+        grid.style.gridTemplateRows = `repeat(${this.size}, 60px)`;  // Definimos el número de filas y su tamaño fijo
         
         // 2. Crear el SVG para dibujar las líneas (dibuja vectores que conectan las casillas)
         const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
         svg.id = "tablero-lineas";
         
-        // Tamaño total del SVG basado en el número de celdas * 60px
+        // Tamaño total en pixeles del SVG basado en el número de celdas * 60px
         const totalDimension = this.size * 60;
         
         // Función auxiliar para dibujar líneas en el SVG
@@ -73,9 +75,14 @@ class Board {
         //se repite tantas veces como el tamaño del tablero para crear todas las líneas necesarias
         //(5 VECES SI ES UN TABLERO 5X5)
         for(let i = 0; i < this.size; i++) {
-            let pos = offset + (i * 60);
-            crearLinea(offset, pos, maxOffset, pos); // Horizontal
-            crearLinea(pos, offset, pos, maxOffset); // Vertical
+
+            let pos = offset + (i * 60); // Posición de la línea en pixeles (centro de la casilla)
+            //30 + (0 * 60) = 30
+            //30 + (1 * 60) = 90...
+
+            //crearLinea(x1, y1, x2, y2) dibuja una línea desde (x1, y1) hasta (x2, y2)
+            crearLinea(offset, pos, maxOffset, pos); // Horizontal -  crearLinea(30, pos, 370, pos)
+            crearLinea(pos, offset, pos, maxOffset); // Vertical - crearLinea(pos, 30, pos, 370)   
         }
 
         // Dibujar las líneas diagonales correctamente (solo desde nodos pares)
@@ -108,15 +115,20 @@ class Board {
         // Añadir el SVG y el Grid al DOM: 
         this.containerHTML.appendChild(svg);
         this.containerHTML.appendChild(grid);
+        /**El orden importa pq la superposición se controla con CSS: El SVG, q tiene position:absolute debe estar detrás del Grid, 
+         * q tiene z-index: 2. Por eso las líneas se dibujan primero y luego se dibujan las casillas interactivas encima.
+        */
 
         // 3. Dibujar las casillas interactivas y las fichas. 
-        for(let row = 0; row < this.size; row++){
+        for(let row = 0; row < this.size; row++){ //recorrer la matriz de arriba abajo y de izquierda a derecha
             for(let col = 0; col < this.size; col++) { 
+                //se crea un div por casilla y se la da la clase box para que tenga el estilo de casilla (intersección) definido en CSS
                 const box = document.createElement('div'); 
                 box.classList.add('box'); 
 
-                const value = this.state[row][col]; 
+                const value = this.state[row][col]; //lo que hay en la casilla: 0 = vacía, 1 = ficha roja, 2 = ficha azul
 
+                //si hay una ficha se crea un div dentro de la casilla con la clase correspondiente para que se vea como ficha (roja o azul) según el valor de la casilla
                 if(value === 1) {
                     const piece = document.createElement('div'); 
                     piece.classList.add('red-piece'); 
@@ -130,15 +142,19 @@ class Board {
 
                 // Si esta casilla contiene una pieza del oponente que puede ser soplada,
                 // le añadimos la clase 'huffable' para resaltarla visualmente (borde amarillo vía CSS).
+                //huffCadidates es la lista de posicones {row, col} de las piezas que pueden ser sopladas.
                 if (huffCandidates && huffCandidates.some(p => p.row === row && p.col === col)) {
+                    //la casilla recibe la clase huffable para que se vea resaltada con un borde amarillo (definido en CSS)
                     box.classList.add('huffable');
+                    /**En el CSS, .huffable .red-piece, .huffable .blue-piece pone un borde amarillo y un brillo a la ficha de dentro. */
                 }
 
+                //Resaltar la casilla seleccionada 
                 if(checkboxTicked && checkboxTicked.row === row && checkboxTicked.col === col){
                     box.style.backgroundColor = 'rgba(255,255,0,0.5)'; 
                     box.style.borderRadius = '50%'; 
                 }
-                grid.appendChild(box); 
+                grid.appendChild(box);  //colocamos la casilla en el contenedor CSS del tablero (grid)
             }
         }
     }
@@ -155,16 +171,20 @@ class Board {
 
         
     validateNormalMovement(originRow, originCol, destRow, destCol, player){
+        //comprobamos que las casillas de origen y destino estén conectadas (adyacentes)
         if((!this.conectedPieces(originRow, originCol, destRow, destCol))) {
             return false; 
         }
-
-        let advanceR = destRow - originRow;
-        if(player === 1){
+        //advanceR es la diferencia de filas entre la casilla destino y la casilla origen.
+        let advanceR = destRow - originRow; //positivo si se mueve hacia abajo, negativo si se mueve hacia arriba
+        if(player === 1){ //si es el jugador 1 (rojo), solo puede avanzar hacia abajo (hacia filas mayores)
             if(advanceR < 0) return false; // Rojas no retroceden
+            //si la ficha roja está en la última fila, no puede avanzar más
             if(originRow === this.size - 1 && advanceR !== 0) return false;
         } else {
+            //si es el jugador 2 (azul), solo puede avanzar hacia arriba (hacia filas menores)
             if(advanceR > 0) return false; // Azules no pueden avanzar hacia abajo
+            //si la ficha azul está en la primera fila, no puede avanzar más
             if(originRow === 0 && advanceR !== 0) return false; 
         }
         return true; 
@@ -238,3 +258,5 @@ class Board {
     }
 
 }
+
+
