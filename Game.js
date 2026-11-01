@@ -26,10 +26,10 @@ class Game {
         this.huffCandidates = [];
         this.interactionMode = 'select_piece';
 
-        this.board.generateDashboard(); 
+        this.board.generateDashboard();  // Genera el tablero y lo dibuja en el DOM
         this.refreshScreen(); 
 
-        // Retraso visual para el primer turno de la IA ===
+        // Retraso visual para el primer turno de la IA
         if (this.turn === 2) {
             this.displayMessages.innerText = `Board generated. Computer starts (Blue)...`;
             // Espera 800 milisegundos antes de que el ordenador mueva
@@ -58,6 +58,21 @@ class Game {
 
     }
 
+    // Mueve la ficha de una casilla a otra sin capturar
+    executeMove(fromR, fromC, toR, toC, player) {
+        this.board.state[toR][toC] = player;
+        this.board.state[fromR][fromC] = 0;
+    }
+
+    // Mueve la ficha y retira la pieza saltada
+    executeJump(fromR, fromC, toR, toC, player) {
+        this.executeMove(fromR, fromC, toR, toC, player);
+        const midR = fromR + (toR - fromR) / 2;
+        const midC = fromC + (toC - fromC) / 2;
+        this.board.state[midR][midC] = 0;
+    }
+
+
     //Máquina de estados para manejar la interacción del usuario con el tablero.
     // Regla del soplo + captura múltiple
     handleClickBox(row, col, value) {
@@ -82,21 +97,6 @@ class Game {
         // Modo seleccionar pieza
         if(this.interactionMode === 'select_piece') {
 
-            // Antes de cualquier otra cosa, comprobar si el jugador quiere ejercer el soplo.
-            if (this.huffCandidates.length > 0 && value === (this.turn === 1 ? 2 : 1)) {
-                // Comprobar si la pieza clicada es una de las que pueden ser sopladas
-                let isHuffable = this.huffCandidates.some(p => p.row === row && p.col === col);
-                //si es una pieza soplable, se elimina del tablero y se limpia la lista de soplos pendientes.
-                if (isHuffable) {
-                    this.board.state[row][col] = 0; //eliminar la pieza del tablero
-                    this.huffCandidates = []; // Limpiar la lista de piezas infractoras después del soplo
-                    this.displayMessages.innerText = `You huffed an opponent's piece! Now make your move.`;
-                    this.refreshScreen();
-                    this.checkGameOver();
-                    return; 
-                }
-            }
-
             // Solo puedes seleccionar tus propias fichas
             if(value === this.turn) { 
                 this.selectedBox = {row: row, col: col}; // Guardar la posición de la pieza seleccionada
@@ -118,7 +118,7 @@ class Game {
                     return; 
                 }
 
-                /* NUEVA REGLA: Plantarse a mitad de una captura múltiple
+                /* Plantarse a mitad de una captura múltiple
                 if(this.visitedPositions.length > 0) {
                     this.huffCandidates = [this.selectedBox]; // Se marca para que la IA la sople
                     this.selectedBox = null;
@@ -169,17 +169,9 @@ class Game {
                     // Al moverse, el jugador renuncia al soplo pendiente del turno actual
                     this.huffCandidates = [];
 
-                    // Mover la pieza
-                    this.board.state[row][col] = this.turn;
-
-                    // Vaciar la casilla de origen
-                    this.board.state[this.selectedBox.row][this.selectedBox.col] = 0;
-
                     // Si fue captura, eliminar la pieza comida del tablero
                     if (esCaptura) {
-                        let medioR = this.selectedBox.row + (row - this.selectedBox.row) / 2;
-                        let medioC = this.selectedBox.col + (col - this.selectedBox.col) / 2;
-                        this.board.state[medioR][medioC] = 0;
+                        this.executeJump(this.selectedBox.row, this.selectedBox.col, row, col, this.turn);
 
                         // Memorizar el origen inicial y el nuevo destino en el historial del turno
                         if (this.visitedPositions.length === 0) {
@@ -196,6 +188,8 @@ class Game {
                         } else {
                             this.visitedPositions = []; // Reiniciar historial de casillas visitadas al finalizar la captura múltiple
                         }
+                    } else {
+                        this.executeMove(this.selectedBox.row, this.selectedBox.col, row, col, this.turn);
                     }
   
                     this.selectedBox = null;  
@@ -274,15 +268,23 @@ class Game {
         this.huffCandidates = [];
 
         // Ejecutar jugada física en el tablero
-        this.board.state[jugada.toR][jugada.toC] = 2;
-        this.board.state[jugada.fromR][jugada.fromC] = 0;
-
         if (jugada.type === 'capture') {
-            let midR = jugada.fromR + (jugada.toR - jugada.fromR) / 2;
-            let midC = jugada.fromC + (jugada.toC - jugada.fromC) / 2;
-            this.board.state[midR][midC] = 0;
-            
+            this.executeJump(jugada.fromR, jugada.fromC, jugada.toR, jugada.toC, 2);
+            this.visitedPositions = [
+                {row: jugada.fromR, col: jugada.fromC},
+                {row: jugada.toR,   col: jugada.toC}
+            ];
+            let curR = jugada.toR, curC = jugada.toC;
+            let next;
+            while ((next = this.ia.searchNextCapture(this.board, curR, curC, this.visitedPositions)) !== null) {
+                this.executeJump(next.fromR, next.fromC, next.toR, next.toC, 2);
+                this.visitedPositions.push({row: next.toR, col: next.toC});
+                curR = next.toR;
+                curC = next.toC;
+            }
             this.visitedPositions = [];
+        } else {
+            this.executeMove(jugada.fromR, jugada.fromC, jugada.toR, jugada.toC, 2);
         }
 
         // Si la IA podía capturar pero hizo un movimiento normal cede el derecho a soplarla
