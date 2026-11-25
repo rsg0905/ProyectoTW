@@ -1,3 +1,8 @@
+/**
+Clase Board: Representa el tablero de juego y contiene la lógica para generar, dibujar y validar movimientos en el tablero.
+Se encarga de gestionar la matriz interna del juego y de conocer las reglas de movimiento y captura de las fichas.
+ */
+
 class Board {
     //tamaño y referencia al contenedor HTML donde se dibuja el tablero
     constructor(size, containerHTML) {
@@ -122,7 +127,7 @@ class Board {
         // 3. Dibujar las casillas interactivas y las fichas. 
         for(let row = 0; row < this.size; row++){ //recorrer la matriz de arriba abajo y de izquierda a derecha
             for(let col = 0; col < this.size; col++) { 
-                //se crea un div por casilla y se la da la clase box para que tenga el estilo de casilla (intersección) definido en CSS
+                //se crea un div por casilla y se le da la clase box para que tenga el estilo de casilla (intersección) definido en CSS
                 const box = document.createElement('div'); 
                 box.classList.add('box'); 
 
@@ -160,10 +165,10 @@ class Board {
     }
 
     conectedPieces(r1, c1, r2, c2){
-        let dr = Math.abs(r1 - r2);
-        let dc = Math.abs(c1 - c2);
+        let dr = Math.abs(r1 - r2); //diferencia de filas entre las dos casillas
+        let dc = Math.abs(c1 - c2); //diferencia de columnas entre las dos casillas
         if (dr > 1 || dc > 1) return false; // Tienen que ser casillas contiguas
-        if (dr === 1 && dc === 1){
+        if (dr === 1 && dc === 1){ // Si es un movimiento diagonal, comprobamos que la suma de las coordenadas sea par
             return (r1 + c1) % 2 === 0; // Solo hay diagonal si la suma es par
         }
         return true; // Movimiento horizontal o vertical valido
@@ -194,16 +199,19 @@ class Board {
         let dr = destRow - originRow; // Diferencia de filas totales del salto
         let dc = destCol - originCol; // Diferencia de columnas totales del salto
 
-        if ((Math.abs(dr) !== 2 && dr !== 0) || (Math.abs(dc) !== 2 && dc !== 0)) return false;
-        if (Math.abs(dr) === 2 && Math.abs(dc) === 1) return false; 
-        if (Math.abs(dr) === 1 && Math.abs(dc) === 2) return false; 
+        // Comprobamos que el salto sea de 2 casillas en alguna dirección 
+        if ((Math.abs(dr) !== 2 && dr !== 0) || (Math.abs(dc) !== 2 && dc !== 0)) return false; //si no es un salto de 2 casillas en alguna dirección, no es válido
+        if (Math.abs(dr) === 2 && Math.abs(dc) === 1) return false; //si es un salto de 2 casillas en fila y 1 en columna, no es válido
+        if (Math.abs(dr) === 1 && Math.abs(dc) === 2) return false;  //si es un salto de 1 casilla en fila y 2 en columna, no es válido
 
         let pasR = dr === 0 ? 0 : dr / 2; // fila intermedia
         let pasC = dc === 0 ? 0 : dc / 2; // columna intermedia
 
         if(!this.conectedPieces(originRow, originCol, originRow + pasR, originCol + pasC)) return false; 
+        //conectedPieces(Fila origen, Columna origen, Fila intermedia, Columna intermedia) comprueba que la casilla intermedia esté conectada con la casilla de origen
 
-        let rival = player === 1 ? 2 : 1;
+        let rival = player === 1 ? 2 : 1; // Determinamos el jugador rival
+        //comprobamos que la casilla intermedia contenga una ficha del jugador rival
         if(this.state[originRow + pasR][originCol + pasC] !== rival) return false;
 
         return true;
@@ -258,5 +266,3 @@ class Board {
     }
 
 }
-
-

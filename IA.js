@@ -1,3 +1,7 @@
+/**Controla el comportamiento del oponente (computadora) analizando el estado del tablero y tomando decisiones 
+ * automatizadas basándose en el nivel de dificultad seleccionado.
+ */
+
 class IA {
     constructor(level) {
         this.level = level;

@@ -1,3 +1,7 @@
+/**Clase principañ que une la interfaz gráfica (HTML), la lógica matemática y la IA. Gestiona los turnos, 
+ * los eventos de usuario (clics) y el flujo de la partida
+ */
+    
 class Game {
     constructor() {
         this.turn = 1; // 1 for red, 2 for blue
@@ -6,28 +10,28 @@ class Game {
         this.visitedPositions = []; // For chain captures
         this.huffCandidates = []; // Pieces that can be huffed
 
-        this.gameOverModal = document.getElementById('game-over-modal');
-        this.gameOverMessage = document.getElementById('game-over-message');
+        this.gameOverModal = document.getElementById('game-over-modal'); //dialog de fin de partida
+        this.gameOverMessage = document.getElementById('game-over-message'); //párrafo dentro del dialog que mostrará el mensaje de fin de partida
 
         this.statistics = { 3: {wins: 0, losses: 0}, 5: {wins: 0, losses: 0} }; // Estadísticas 
 
-        this.displayMessages = document.querySelector('#mensajes p');
+        this.displayMessages = document.querySelector('#mensajes p'); // Elemento donde se mostrarán los mensajes de estado del juego
         this.board = null;
         this.ia = null; 
     }
 
     Start(size, iaLevel, firstPlayer) {
-        this.board = new Board(size, document.getElementById('tablero'));
-        this.ia = new IA(iaLevel);
-        this.turn = firstPlayer; 
+        this.board = new Board(size, document.getElementById('tablero')); // Crea un nuevo tablero de juego con el tamaño especificado y lo asocia al elemento del DOM
+        this.ia = new IA(iaLevel); // Crea una nueva instancia de la IA con el nivel de dificultad especificado
+        this.turn = firstPlayer; // Establece el primer jugador (1 = rojo, 2 = azul)
 
-        this.selectedBox = null; 
+        this.selectedBox = null;  
         this.visitedPositions = [];
         this.huffCandidates = [];
         this.interactionMode = 'select_piece';
 
-        this.board.generateDashboard();  // Genera el tablero y lo dibuja en el DOM
-        this.refreshScreen(); 
+        this.board.generateDashboard();  // Genera el tablero
+        this.refreshScreen(); // Dibuja el tablero y vincula los eventos de clic a las casillas
 
         // Retraso visual para el primer turno de la IA
         if (this.turn === 2) {
@@ -39,20 +43,26 @@ class Game {
         }
     }
 
-    refreshScreen() {
+    refreshScreen() { // Actualiza la visualización del tablero y vincula los eventos de clic a las casillas
         this.board.drawBoard(this.selectedBox, this.huffCandidates);
         this.vinculateEventListeners();
     }
 
     vinculateEventListeners() {
         //busca las casillas recien dibujaddas y les asigna el evento click
-        const boxes = document.querySelectorAll('.box');
+        const boxes = document.querySelectorAll('.box'); //obtener todas las casillas del tablero
         let counter = 0; 
+        //recorrer la cuadricula (filas y columnas)
         for (let r = 0; r < this.board.size; r++) {
             for (let c = 0; c < this.board.size; c++) {
+                //obtener que hay en esa casilla (0, 1 o 2) es este momento
                 let value = this.board.state[r][c];
-                boxes[counter].onclick = () => this.handleClickBox(r, c, value  );
-                counter++;
+                //asignar la acción de clic a esa casilla 
+                boxes[counter].onclick = () => this.handleClickBox(r, c, value);
+                //la función flecha no crea su propio this, hereda el significado de this de su entorno inmediato (apunta a la clase Game)
+                //al hacer clic, el codigo sabe donde encontrar el método handleClickBox
+                counter++; //incrementar el contador para la siguiente casilla
+                //a cada casilla se le asigna el evento .onclick pasando la fila, columna y valor de la casilla al método handleClickBox
             }
         }
 
@@ -75,22 +85,26 @@ class Game {
 
     //Máquina de estados para manejar la interacción del usuario con el tablero.
     // Regla del soplo + captura múltiple
+    //argumentos: fila en la que se hizo clic, columna en la que se hizo clic y valor de la casilla (0, 1 o 2)
     handleClickBox(row, col, value) {
         //comprobar si el juego ha terminado o si es el turno del jugador 2 (ordenador).
         if (this.turn === 2 || this.interactionMode === 'game_over') return;
 
-        //Regla del soplo: si el jugador anterior tenía una captura disponible y no la hizo se da la oportunidad de soplar una de sus piezas.
+        //Regla del soplo: si el jugador anterior tenía una captura disponible y no la hizo se le da la oportunidad de soplar una de sus piezas.
+        //comprobar si la lista de piezas sopables no está vacía y si el jugador hace clic en una de esas piezas.
         if (this.huffCandidates.length > 0 && value === 2) {
+            //validación con some: como puede haber varias piezas rivales en el tablero, se busca las coordenadas exactas
+            //de la pieza que se acaba de clicar coincidan con alguna de las coordenadas guardadas en la lista de piezas sopables. Si coincide, se permite el soplo.
             let isHuffable = this.huffCandidates.some(p => p.row === row && p.col === col);
             if (isHuffable) {
-                this.board.state[row][col] = 0; 
-                this.huffCandidates = []; 
+                this.board.state[row][col] = 0;  //borrar la pieza soplada del tablero
+                this.huffCandidates = []; // Limpiar la lista de piezas sopables
                 this.selectedBox = null; // Resetea la selección de la pieza
                 this.interactionMode = 'select_piece';
                 this.displayMessages.innerText = `You huffed an opponent's piece! Now make your move.`;
                 this.refreshScreen();
                 this.checkGameOver();
-                return; 
+                return; //la función acaba aqui pero no cambia  el turno. 
             }
         }
 
@@ -98,7 +112,7 @@ class Game {
         if(this.interactionMode === 'select_piece') {
 
             // Solo puedes seleccionar tus propias fichas
-            if(value === this.turn) { 
+            if(value === this.turn) { //comprobar que el valor de la casilla coincide con el turno del jugador (1 = rojo, 2 = azul)
                 this.selectedBox = {row: row, col: col}; // Guardar la posición de la pieza seleccionada
                 this.interactionMode = 'select_destination'; 
                 this.displayMessages.innerText = `You've selected your piece. Tap the destination.`; 
@@ -181,7 +195,7 @@ class Game {
 
                         // Comprobar si se puede seguir saltando desde la nueva posición
                         if (this.canCaptureAgain(row, col, this.turn)) {
-                            this.selectedBox = {row: row, col: col};
+                            this.selectedBox = {row: row, col: col}; // Mantener la pieza seleccionada para la siguiente captura
                             this.displayMessages.innerText = 'You can capture again! Select the next destination.';
                             this.refreshScreen();
                             return; // No cambiar el turno aún
@@ -222,12 +236,16 @@ class Game {
     }
 
     canCaptureAgain(r, c, player) {
+        //posibles saltos: arriba, abajo, izquierda, derecha y diagonales
         let jumps = [ [-2, 0], [2, 0], [0, -2], [0, 2], [-2, -2], [-2, 2], [2, -2], [2, 2] ];
-        for(let s of jumps) { 
-            let destR = r + s[0]; 
-            let destC = c + s[1]; 
+        for(let s of jumps) {  //recorrer todos los posibles saltos
+            let destR = r + s[0];  //fila de destino
+            let destC = c + s[1];  //columna de destino
+            // Comprobar que la casilla de destino está dentro del tablero
             if(destR >= 0 && destR < this.board.size && destC >= 0 && destC < this.board.size){
+                // Comprobar que la casilla de destino no ha sido visitada en esta cadena
                 let visited = this.visitedPositions.some(pos => pos.row === destR && pos.col === destC); 
+                // Comprobar que la casilla de destino está vacía y que la captura es válida
                 if(this.board.state[destR][destC] === 0 && !visited && this.board.validateCapture(r, c, destR, destC, player)){
                     return true;
                 }

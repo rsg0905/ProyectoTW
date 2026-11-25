@@ -1,18 +1,19 @@
-	<!DOCTYPE html>
+<!DOCTYPE html>
 
-<html lang = "en">
+<html lang="en">
   <head>
     <meta charset="UTF-8">  <!--para caracteres acentuados-->
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Alquerque Web</title>
-    <link rel="stylesheet" href="estilo.css">  
+    <link rel="stylesheet" href="estilo.css">  <!--conectar el HTML con el archivo de diseño CSS-->
   </head>
 
 
 <body>
     <!--Logotipo-->
     <header class="site-header">
-        <a href="#" class="logo">
+        <a href="#" class="logo"> <!-- enlace al inicio -->
+            <!-- aria-hidden="true": indica que el contenido es solo decorativo y no debe ser leído por lectores de pantalla -->
             <span class="logo-icon" aria-hidden="true">
                 <span class="piece blue"></span>
                 <span class="piece red"></span>
@@ -27,32 +28,54 @@
         </a>
     </header>
 
-
-
-    <!-- Identificación-->
+    <!-- Identificación: contiene el formulario de inicio de sesión -->
+    <!-- Identificación -->
     <section id="identification">
-        <h2>Identification</h2>
-        <form id="login-form">
-            <input type="text" id="login-username" placeholder="Username" required>
-            <input type="password" id="login-password" placeholder="Password" required>
-            <button type="button">Login</button>
-        </form>
+        <p id="user-display">User: Guest</p>
+        <button type="button" id="btn-auth">Log in</button>
     </section>
 
-    <!-- Configuración -->
+    <!-- Modal de Inicio de Sesión -->
+    <dialog id="login-modal">
+        <h2>Log in</h2>
+        <form id="login-form">
+            <label for="input-nick">Username:</label>
+            <input type="text" id="input-nick" required>
+
+            <label for="input-password">Password:</label>
+            <input type="password" id="input-password" required>
+
+            <div class="modal-actions">
+                <button type="submit" id="btn-submit-login">Log in</button>
+                <button type="button" id="btn-cancel-login" class="btn-secondary">Cancel</button>
+            </div>
+        </form>
+    </dialog>
+
+    <!-- Modal de Confirmación de Cierre de Sesión -->
+    <dialog id="logout-modal">
+        <h2>Log out</h2>
+        <p>Are you sure you want to log out?</p>
+        <div class="modal-actions">
+            <button type="button" id="btn-confirm-logout" class="btn-danger">Yes, log out</button>
+            <button type="button" id="btn-cancel-logout" class="btn-secondary">Cancel</button>
+        </div>
+    </dialog>
+    
+    <!-- Configuración: utiliza etiquetas <label> y <select> para crear menus desplegables -->
     <section id="configuration">
         <h2>Configuration</h2>
         
         <label for="select-size">Board Size:</label>
         <select id="select-size">
             <option value="3">3x3</option>
-            <option value="5" selected>5x5</option>
+            <option value="5" selected>5x5</option> <!--el atributo selected define el valor por defecto-->
         </select>
 
         <label for="select-opponent">Play against:</label>
         <select id="select-opponent">
             <option value="computer" selected>Computer</option>
-            <option value="player" disabled>Another player</option> <!-- (Próxima entrega) -->
+            <option value="player">Another player</option>
         </select>
 
         <label for="select-turn">First player:</label>
@@ -70,6 +93,7 @@
         <button id="btn-apply-settings">Apply Settings</button>
     </section>
 
+    <!-- barra de navegación que contiene los controles del juego. Cada botón llamará a un método de la clase Game -->
     <nav id="commands">
         <button id="btn-start">Start Game</button>
         <button id="btn-instructions">See instructions</button>
@@ -89,7 +113,7 @@
     <!-- Tablero de juego-->
      <h2>Game Board</h2>
     <main id="tablero">
-        <!-- El tablero se generará dinámicamente mediante JavaScript -->
+        <!-- El tablero se generará dinámicamente mediante JavaScript inyectando elementos en el DOM -->
     </main>
 
     <!-- Instrucciones (panel superpuesto oculto por defecto)-->
@@ -144,7 +168,7 @@
         </div>
     </dialog>
     
-    <!-- Scripts -->
+    <!-- Scripts  que controlan la lógica y los eventos de los botones-->
     <script src="Board.js"></script>
     <script src="IA.js"></script>
     <script src="Game.js"></script>
