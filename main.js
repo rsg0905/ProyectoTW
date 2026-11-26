@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const selectSize = document.getElementById('select-size'); // Selector de tamaño del tablero
     const selectIA = document.getElementById('select-ia'); // Selector de nivel de IA
     const selectTurn = document.getElementById('select-turn'); // Selector de primer jugador
+    const selectOpponent = document.getElementById('select-opponent'); // Selector de oponente
 
     // Referencias de Login / Logout
     const userDisplay = document.getElementById('user-display');
