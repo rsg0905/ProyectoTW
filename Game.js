@@ -13,11 +13,56 @@ class Game {
         this.gameOverModal = document.getElementById('game-over-modal'); //dialog de fin de partida
         this.gameOverMessage = document.getElementById('game-over-message'); //párrafo dentro del dialog que mostrará el mensaje de fin de partida
 
-        this.statistics = { 3: {wins: 0, losses: 0}, 5: {wins: 0, losses: 0} }; // Estadísticas 
+        this.STORAGE_KEY = 'alquerque_local_stats';                                                                         
+        this.statistics = this.loadStatistics();                                                                            
+        this.updateStatisticsUI(); 
 
         this.displayMessages = document.querySelector('#mensajes p'); // Elemento donde se mostrarán los mensajes de estado del juego
         this.board = null;
         this.ia = null; 
+    }
+    
+    loadStatistics() {                                                                                              
+        const defaultStats = {                                                                                      
+            3: { wins: 0, losses: 0 },                                                                              
+            5: { wins: 0, losses: 0 }                                                                               
+        };                                                                                                          
+                                                                                                                        
+        try {                                                                                                       
+            const rawData = localStorage.getItem(this.STORAGE_KEY);                                                 
+            if (!rawData) {                                                                                         
+                return defaultStats;                                                                                
+            }                                                                                                       
+                                                                                                                        
+            const parsed = JSON.parse(rawData);                                                                     
+                                                                                                                        
+            // Verificamos que tenga la estructura esperada para 3x3 y 5x5                                          
+            if (parsed && parsed[3] && parsed[5]) {                                                                 
+                return parsed;                                                                                      
+            }                                                                                                       
+        } catch (error) {                                                                                           
+            console.warn('No se pudieron leer las estadísticas de localStorage:', error);                           
+        }                                                                                                           
+                                                                                                                        
+        return defaultStats;                                                                                        
+    }
+
+    saveStatistics() {                                                                                              
+        try {                                                                                                       
+            localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.statistics));                                
+        } catch (error) {                                                                                           
+            console.warn('No se pudieron guardar las estadísticas en localStorage:', error);                        
+        }                                                                                                           
+    }
+
+    updateStatisticsUI() {                                                                                          
+        for (const size of [3, 5]) {                                                                                
+            const winsCell = document.getElementById(`wins-${size}`);                                               
+            const lossesCell = document.getElementById(`losses-${size}`);                                           
+                                                                                                                        
+            if (winsCell) winsCell.innerText = this.statistics[size].wins;                                          
+            if (lossesCell) lossesCell.innerText = this.statistics[size].losses;                                    
+        }                                                                                                           
     }
 
     Start(size, iaLevel, firstPlayer) {
@@ -352,7 +397,8 @@ class Game {
         this.huffCandidates = [];
         
         this.statistics[this.board.size].losses++;
-        document.getElementById(`losses-${this.board.size}`).innerText = this.statistics[this.board.size].losses;
+        this.saveStatistics();
+        this.updateStatisticsUI();
 
         let msg = "You gave up. The computer wins the match!";
         this.displayMessages.innerText = msg;
@@ -422,8 +468,8 @@ class Game {
                 msg = "Game Over! You have no valid moves left. Computer wins!";
             }
             
-            document.getElementById(`wins-${this.board.size}`).innerText = this.statistics[this.board.size].wins;
-            document.getElementById(`losses-${this.board.size}`).innerText = this.statistics[this.board.size].losses;
+            this.saveStatistics();
+            this.updateStatisticsUI();
             
             this.displayMessages.innerText = msg;
             this.gameOverMessage.innerText = msg;
